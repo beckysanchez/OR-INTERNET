@@ -1,0 +1,163 @@
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const db = require('./db');
+const multer = require('multer'); // ⚠️ Asegúrate de instalarlo con npm i multer
+
+const app = express();
+const PORT = 3006;
+
+// Middlewares
+app.use(cors());
+// body-parser solo para JSON y URL-encoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estáticos (CSS, JS, imágenes, HTML)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Configurar multer (para subir imágenes en memoria)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Abrir 'registro.html' al visitar la raíz '/'
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'registro.html'));
+});
+
+// Ruta POST para registrar usuario con imagen
+app.post('/registro', upload.single('img_p'), (req, res) => {
+  const nombre = req.body.NOMBRE;
+  const correo = req.body.CORREO.trim().toLowerCase();
+  const Username = req.body.Username.trim().toLowerCase();
+  const contraseña = req.body.CONTRA;
+  const imagen = req.file ? req.file.buffer.toString('base64') : null;
+
+  if (!nombre || !correo || !contraseña || !Username) {
+    return res.status(400).json({ msg: '1 Faltan datos' });
+  }
+
+  // 🔍 Verificar si el correo o el username ya existen
+  const checkSql = 'SELECT * FROM USUARIO WHERE CORREO = ? OR Username = ?';
+  db.query(checkSql, [correo, Username], (err, result) => {
+    if (err) {
+      console.error('❌ 2 Error al verificar duplicados:', err);
+      return res.status(500).json({ msg: '3 Error en el servidor' });
+    }
+
+    if (result.length > 0) {
+      const existente = result[0];
+      if (existente.CORREO === correo && existente.Username === Username) {
+        return res.status(409).json({ msg: '4 El correo y el nombre de usuario ya están registrados' });
+      } else if (existente.CORREO === correo) {
+        return res.status(409).json({ msg: '5 El correo ya está registrado' });
+      } else if (existente.Username === Username) {
+        return res.status(409).json({ msg: '6 El nombre de usuario ya está registrado' });
+      }
+    }
+
+    // ✅ Si no hay duplicados, intentar registrar
+    const insertSql = `
+      INSERT INTO USUARIO (NOMBRE, CORREO, CONTRA, Username, puntos, img_p)
+      VALUES (?, ?, ?, ?, 10, ?)
+    `;
+    db.query(insertSql, [nombre, correo, contraseña, Username, imagen], (err, result) => {
+      // 🧠 Aquí va lo del "err.code === 'ER_DUP_ENTRY'"
+      if (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          // ⚠️ Este error lo lanza MySQL si hay índices UNIQUE activos
+          return res.status(409).json({ msg: '7 El correo o el nombre de usuario ya existen' });
+        }
+        console.error('❌ Error al insertar:', err);
+        return res.status(500).json({ msg: '8 Error en el servidor' });
+      }
+
+      console.log('✅ Usuario registrado con ID:', result.insertId);
+      res.json({ msg: 'Usuario registrado exitosamente' });
+    });
+  });
+});
+
+
+
+// Ruta POST para iniciar sesión
+app.post('/login', (req, res) => {
+  const correo = req.body.CORREO;
+  const contraseña = req.body.CONTRA;
+
+  if (!correo || !contraseña) {
+    return res.status(400).json({ msg: 'Faltan datos' });
+  }
+
+  const sql = 'SELECT * FROM USUARIO WHERE CORREO = ? AND CONTRA = ?';
+  db.query(sql, [correo, contraseña], (err, result) => {
+    if (err) {
+      console.error('❌ Error al consultar:', err);
+      return res.status(500).json({ msg: 'Error en el servidor' });
+    }
+
+    if (result.length === 0) {
+      return res.status(401).json({ msg: 'Correo o contraseña incorrectos' });
+    }
+
+    // Login exitoso
+    res.json({ 
+  msg: 'Login exitoso', 
+  user: {
+    id: result[0].ID_USUARIO,
+    NOMBRE: result[0].NOMBRE,
+    CORREO: result[0].CORREO,
+    Username: result[0].Username,
+    puntos: result[0].puntos,
+    img_p: result[0].img_p // si guardaste la imagen en base64
+  }
+});
+    
+  });
+});
+
+// Buscar usuarios por username
+app.get('/usuarios', (req, res) => {
+    const q = req.query.q || '';
+    const sql = 'SELECT ID_USUARIO, Username, img_p, puntos FROM USUARIO WHERE Username LIKE ?';
+    db.query(sql, [`%${q}%`], (err, result) => {
+        if(err) return res.status(500).json(err);
+        res.json(result);
+    });
+});
+
+
+// Obtener amigos de un usuario
+app.get('/amigos/:userid', (req, res) => {
+    const userid = req.params.userid;
+    const sql = `
+        SELECT u.ID_USUARIO, u.Username, u.img_p, u.puntos
+        FROM AMIGOS a
+        JOIN USUARIO u ON (u.ID_USUARIO = a.ID_USUARIO2 AND a.ID_USUARIO1 = ?)
+    `;
+    db.query(sql, [userid], (err, result) => {
+        if(err) return res.status(500).json(err);
+        res.json(result);
+    });
+});
+
+
+// Agregar amigo
+app.post('/agregar-amigo', (req, res) => {
+    const { usuario_id, amigo_id } = req.body;
+    if(!usuario_id || !amigo_id) return res.status(400).json({msg:'Faltan datos'});
+
+    const sql = 'INSERT INTO AMIGOS (ID_USUARIO1, ID_USUARIO2) VALUES (?, ?)';
+    db.query(sql, [usuario_id, amigo_id], (err, result) => {
+        if(err) return res.status(500).json({msg:'Error al agregar amigo'});
+        res.json({msg:'Amigo agregado'});
+    });
+});
+
+
+
+
+// Arrancar servidor
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+});

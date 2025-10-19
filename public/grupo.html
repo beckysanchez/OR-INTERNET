@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Grupo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+     <link rel="stylesheet" href="css/grupo.css">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="container d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center gap-4">
+                <h4 class="text-primary fw-bold m-0">⚽ SocioMatch</h4>
+                <nav class="d-none d-md-flex gap-3">
+                    <a href="index.html" class="btn btn-link text-decoration-none">Inicio</a>
+                    <a href="grupo.html" class="btn btn-link text-decoration-none active">Crear grupo</a>
+                    <a href="metas.html" class="btn btn-link text-decoration-none">Metas Diarias</a>
+                    <a href="predicciones.html" class="btn btn-link text-decoration-none">Predicciones</a>
+                </nav>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="points-badge">
+                    ⭐ <span id="userPoints">120</span>
+                </div>
+               <img src="img/image1.png" alt="perfil" class="rounded-circle"
+                    style="width:40px; height:40px; object-fit:cover;">
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Título -->
+    <h2>Crear Grupo</h2>
+
+    <!-- Lista de amigos -->
+    <div class="friends-list">
+        <div class="friend-item">
+            <span>Ana</span>
+            <div class="status">
+                <span class="online">🟢 Conectado</span>
+                <input type="checkbox" class="form-check-input friend-checkbox" value="Ana">
+            </div>
+        </div>
+        <div class="friend-item">
+            <span>Diego</span>
+            <div class="status">
+                <span class="offline">⚪ Desconectado</span>
+                <input type="checkbox" class="form-check-input friend-checkbox" value="Diego">
+            </div>
+        </div>
+        <div class="friend-item">
+            <span>Luis</span>
+            <div class="status">
+                <span class="online">🟢 Conectado</span>
+                <input type="checkbox" class="form-check-input friend-checkbox" value="Luis">
+            </div>
+        </div>
+        <div class="friend-item">
+            <span>María</span>
+            <div class="status">
+                <span class="offline">⚪ Desconectado</span>
+                <input type="checkbox" class="form-check-input friend-checkbox" value="María">
+            </div>
+        </div>
+    </div>
+
+    <!-- Título del chat -->
+    <div class="form-group">
+        <label for="chatTitle" class="form-label">Título del Chat</label>
+        <input type="text" id="chatTitle" class="form-control" placeholder="Escribe el nombre del grupo">
+    </div>
+
+    <!-- Botón Crear Grupo -->
+    <button class="btn btn-primary btn-create" id="createGroupBtn">Crear Grupo</button>
+
+    <!-- Grupos Creados -->
+    <div class="groups-list">
+        <h4>Grupos Creados</h4>
+        <div id="groupsContainer">
+            <p class="text-muted">No hay grupos creados aún.</p>
+        </div>
+    </div>
+
+    <script>
+        const createGroupBtn = document.getElementById('createGroupBtn');
+        const groupsContainer = document.getElementById('groupsContainer');
+
+        createGroupBtn.addEventListener('click', () => {
+            const title = document.getElementById('chatTitle').value.trim();
+            const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox:checked'))
+                .map(cb => cb.value);
+
+            if (!title) {
+                alert("Por favor ingresa un título para el chat.");
+                return;
+            }
+            if (selectedFriends.length === 0) {
+                alert("Selecciona al menos un amigo para el grupo.");
+                return;
+            }
+
+            // Crear grupo en la lista
+            const groupDiv = document.createElement('div');
+            groupDiv.classList.add('group-item');
+            groupDiv.textContent = `${title} - Miembros: ${selectedFriends.join(', ')}`;
+            groupsContainer.appendChild(groupDiv);
+
+            // Limpiar input y checkboxes
+            document.getElementById('chatTitle').value = '';
+            document.querySelectorAll('.friend-checkbox').forEach(cb => cb.checked = false);
+
+            // Quitar mensaje "No hay grupos"
+            const noGroupsMsg = groupsContainer.querySelector('p.text-muted');
+            if (noGroupsMsg) noGroupsMsg.remove();
+
+            alert(`Grupo "${title}" creado con: ${selectedFriends.join(', ')}`);
+        });
+    </script>
+
+</body>
+
+</html>
