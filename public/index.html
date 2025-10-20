@@ -253,8 +253,9 @@
                     friendsList.appendChild(div);
 
                     div.querySelector('.btnMessage').addEventListener('click', () => {
-                        openChat(f.Username);
-                    });
+  openChat(f.Username, f.ID_USUARIO); // ahora enviamos el id
+});
+
                 });
             }
 
@@ -286,7 +287,7 @@
                             const res = await fetch('https://or-internet.onrender.com/agregar-amigo', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ usuario_id: user.ID_usuario, amigo_id: u.ID_usuario })
+                                body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
                             });
                             const data = await res.json();
                             console.log(data);

@@ -91,36 +91,39 @@
         const createGroupBtn = document.getElementById('createGroupBtn');
         const groupsContainer = document.getElementById('groupsContainer');
 
-        createGroupBtn.addEventListener('click', () => {
-            const title = document.getElementById('chatTitle').value.trim();
-            const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox:checked'))
-                .map(cb => cb.value);
+     createGroupBtn.addEventListener('click', async () => {
+  const title = document.getElementById('chatTitle').value.trim();
+  const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox:checked')).map(cb => cb.value);
+  const user = JSON.parse(localStorage.getItem('usuario'));
 
-            if (!title) {
-                alert("Por favor ingresa un título para el chat.");
-                return;
-            }
-            if (selectedFriends.length === 0) {
-                alert("Selecciona al menos un amigo para el grupo.");
-                return;
-            }
+  if (!title || selectedFriends.length === 0) {
+    alert("Faltan datos para crear grupo.");
+    return;
+  }
 
-            // Crear grupo en la lista
-            const groupDiv = document.createElement('div');
-            groupDiv.classList.add('group-item');
-            groupDiv.textContent = `${title} - Miembros: ${selectedFriends.join(', ')}`;
-            groupsContainer.appendChild(groupDiv);
+  try {
+    const res = await fetch('https://or-internet.onrender.com/crear-grupo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: title,
+        creador_id: user.id,
+        miembros: selectedFriends // ← en el futuro aquí pondrás IDs reales
+      })
+    });
 
-            // Limpiar input y checkboxes
-            document.getElementById('chatTitle').value = '';
-            document.querySelectorAll('.friend-checkbox').forEach(cb => cb.checked = false);
-
-            // Quitar mensaje "No hay grupos"
-            const noGroupsMsg = groupsContainer.querySelector('p.text-muted');
-            if (noGroupsMsg) noGroupsMsg.remove();
-
-            alert(`grupo "${title}" creado con: ${selectedFriends.join(', ')}`);
-        });
+    const data = await res.json();
+    if (res.ok) {
+      alert('✅ Grupo creado correctamente');
+    } else {
+      alert('⚠️ ' + data.msg);
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error al conectar con el servidor.');
+  }
+});
+ 
     </script>
 
 </body>
