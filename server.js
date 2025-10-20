@@ -7,7 +7,15 @@ const multer = require('multer'); // ⚠️ Asegúrate de instalarlo con npm i m
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://or-internet.onrender.com', // 🌐 tu frontend en Render
+    'https://sociomatch-backend.onrender.com' // opcionalmente tu backend si lo usas desde otro entorno
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+}));
+
 // body-parser solo para JSON y URL-encoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
