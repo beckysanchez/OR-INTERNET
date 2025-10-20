@@ -201,6 +201,37 @@ const io = new Server(server, {
   }
 });
 
+// Guardar usuarios conectados
+const usuariosConectados = {}; // { userId: socket.id }
+
+io.on('connection', (socket) => {
+  console.log('🟢 Usuario conectado:', socket.id);
+
+  // Recibir el ID del usuario que se conecta
+  socket.on('registrarUsuario', (userId) => {
+    usuariosConectados[userId] = socket.id;
+    console.log('👤 Usuario registrado:', userId);
+  });
+
+  // Escuchar mensaje privado
+  socket.on('mensajePrivado', ({ de, para, texto }) => {
+    console.log(`📨 Mensaje de ${de} para ${para}: ${texto}`);
+    const socketDestino = usuariosConectados[para];
+    if (socketDestino) {
+      io.to(socketDestino).emit('recibirMensaje', { de, texto });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    for (const [id, sock] of Object.entries(usuariosConectados)) {
+      if (sock === socket.id) delete usuariosConectados[id];
+    }
+    console.log('🔴 Usuario desconectado:', socket.id);
+  });
+});
+
+
+
 // Escuchar conexión de un cliente
 io.on('connection', (socket) => {
   console.log('🟢 Usuario conectado:', socket.id);
