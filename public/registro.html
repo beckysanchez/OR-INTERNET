@@ -76,7 +76,7 @@
   if (imagen) formData.append('img_p', imagen);
 
   try {
-    const response = await fetch('http://localhost:3006/registro', {
+    const response = await fetch('http://sociomatch-backend.onrender.com/registro', {
       method: 'POST',
       body: formData
     });

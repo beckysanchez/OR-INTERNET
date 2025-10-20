@@ -5,7 +5,6 @@ const db = require('./db');
 const multer = require('multer'); // ⚠️ Asegúrate de instalarlo con npm i multer
 
 const app = express();
-const PORT = 3006;
 
 // Middlewares
 app.use(cors());
@@ -157,7 +156,9 @@ app.post('/agregar-amigo', (req, res) => {
 
 
 
-// Arrancar servidor
+const PORT = process.env.PORT || 3006;
+
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
+
