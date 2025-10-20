@@ -187,9 +187,38 @@ app.post('/agregar-amigo', (req, res) => {
 
 
 
+const http = require('http');
+const { Server } = require('socket.io');
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+const server = http.createServer(app);
+
+// Configurar Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: ['https://or-internet.onrender.com'], // tu frontend en Render
+    methods: ['GET', 'POST']
+  }
 });
+
+// Escuchar conexión de un cliente
+io.on('connection', (socket) => {
+  console.log('🟢 Usuario conectado:', socket.id);
+
+  socket.on('enviarMensaje', (data) => {
+    console.log('📨 Mensaje recibido:', data);
+    // reenviar mensaje a todos los clientes
+    io.emit('recibirMensaje', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔴 Usuario desconectado:', socket.id);
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor con Socket.IO corriendo en puerto ${PORT}`);
+});
+
 
 

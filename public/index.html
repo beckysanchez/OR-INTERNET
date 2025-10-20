@@ -349,5 +349,30 @@
             renderFriends();
         });
     </script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  // Conectar con tu backend
+  const socket = io('https://sociomatch-backend.onrender.com');
+
+  const input = document.querySelector('.input-group input');
+  const sendBtn = document.querySelector('.input-group button');
+  const chatBox = document.querySelector('.chat-box');
+
+  sendBtn.addEventListener('click', () => {
+    const msg = input.value.trim();
+    if (!msg) return;
+    const mensaje = { autor: 'Yo', texto: msg };
+    socket.emit('enviarMensaje', mensaje);
+    input.value = '';
+  });
+
+  socket.on('recibirMensaje', (msg) => {
+    const div = document.createElement('div');
+    div.textContent = `${msg.autor}: ${msg.texto}`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+</script>
+
 </body>
 </html>
