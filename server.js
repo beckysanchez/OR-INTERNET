@@ -56,6 +56,7 @@ app.get('/', (req, res) => {
 
 // Ruta POST para registrar usuario con imagen
 app.post('/registro', upload.single('img_p'), (req, res) => {
+  console.log('📥 Petición recibida en /registro:', req.body); 
   const nombre = req.body.NOMBRE;
   const correo = req.body.CORREO.trim().toLowerCase();
   const Username = req.body.Username.trim().toLowerCase();

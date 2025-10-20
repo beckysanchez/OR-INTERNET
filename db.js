@@ -1,20 +1,19 @@
 const mysql = require('mysql2');
 
-const connection = mysql.createConnection({
-  host: 'yamabiko.proxy.rlwy.net',  // 👈 el host que te da Railway
-  user: 'root',                      // 👈 el usuario
-  password: 'TU_CONTRASEÑA_DE_RAILWAY', // 👈 la contraseña (quita los asteriscos)
-  database: 'railway',               // 👈 el nombre de la base
-  port: 11186                       // 👈 el puerto que te muestra Railway
+const db = mysql.createConnection({
+  host: 'tu-host-de-railway.proxy.rlwy.net',
+  user: 'root',
+  password: 'auVsnsFRweRTUBAdcoikMbcZbySCvAUs',
+  database: 'railway',
+  port: 11186
 });
 
-connection.connect((err) => {
+db.connect((err) => {
   if (err) {
     console.error('❌ Error al conectar a MySQL:', err);
-    return;
+  } else {
+    console.log('✅ Conectado a MySQL en Railway');
   }
-  console.log('✅ Conexión exitosa a MySQL en Railway');
 });
 
-module.exports = connection;
-
+module.exports = db;
