@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Grupo</title>
+    <title>Crear grupo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
      <link rel="stylesheet" href="css/grupo.css">
@@ -36,7 +36,7 @@
     </header>
 
     <!-- Título -->
-    <h2>Crear Grupo</h2>
+    <h2>Crear grupo</h2>
 
     <!-- Lista de amigos -->
     <div class="friends-list">
@@ -76,12 +76,12 @@
         <input type="text" id="chatTitle" class="form-control" placeholder="Escribe el nombre del grupo">
     </div>
 
-    <!-- Botón Crear Grupo -->
-    <button class="btn btn-primary btn-create" id="createGroupBtn">Crear Grupo</button>
+    <!-- Botón Crear grupo -->
+    <button class="btn btn-primary btn-create" id="createGroupBtn">Crear grupo</button>
 
-    <!-- Grupos Creados -->
+    <!-- grupos Creados -->
     <div class="groups-list">
-        <h4>Grupos Creados</h4>
+        <h4>grupos Creados</h4>
         <div id="groupsContainer">
             <p class="text-muted">No hay grupos creados aún.</p>
         </div>
@@ -119,7 +119,7 @@
             const noGroupsMsg = groupsContainer.querySelector('p.text-muted');
             if (noGroupsMsg) noGroupsMsg.remove();
 
-            alert(`Grupo "${title}" creado con: ${selectedFriends.join(', ')}`);
+            alert(`grupo "${title}" creado con: ${selectedFriends.join(', ')}`);
         });
     </script>
 

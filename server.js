@@ -68,7 +68,7 @@ app.post('/registro', upload.single('img_p'), (req, res) => {
   }
 
   // 🔍 Verificar si el correo o el username ya existen
-  const checkSql = 'SELECT * FROM USUARIO WHERE CORREO = ? OR Username = ?';
+  const checkSql = 'SELECT * FROM usuario WHERE CORREO = ? OR Username = ?';
   db.query(checkSql, [correo, Username], (err, result) => {
     if (err) {
       console.error('❌ 2 Error al verificar duplicados:', err);
@@ -88,7 +88,7 @@ app.post('/registro', upload.single('img_p'), (req, res) => {
 
     // ✅ Si no hay duplicados, intentar registrar
     const insertSql = `
-      INSERT INTO USUARIO (NOMBRE, CORREO, CONTRA, Username, puntos, img_p)
+      INSERT INTO usuario (NOMBRE, CORREO, CONTRA, Username, puntos, img_p)
       VALUES (?, ?, ?, ?, 10, ?)
     `;
     db.query(insertSql, [nombre, correo, contraseña, Username, imagen], (err, result) => {
@@ -102,8 +102,8 @@ app.post('/registro', upload.single('img_p'), (req, res) => {
         return res.status(500).json({ msg: '8 Error en el servidor' });
       }
 
-      console.log('✅ Usuario registrado con ID:', result.insertId);
-      res.json({ msg: 'Usuario registrado exitosamente' });
+      console.log('✅ usuario registrado con ID:', result.insertId);
+      res.json({ msg: 'usuario registrado exitosamente' });
     });
   });
 });
@@ -119,7 +119,7 @@ app.post('/login', (req, res) => {
     return res.status(400).json({ msg: 'Faltan datos' });
   }
 
-  const sql = 'SELECT * FROM USUARIO WHERE CORREO = ? AND CONTRA = ?';
+  const sql = 'SELECT * FROM usuario WHERE CORREO = ? AND CONTRA = ?';
   db.query(sql, [correo, contraseña], (err, result) => {
     if (err) {
       console.error('❌ Error al consultar:', err);
@@ -134,7 +134,7 @@ app.post('/login', (req, res) => {
     res.json({ 
   msg: 'Login exitoso', 
   user: {
-    id: result[0].ID_USUARIO,
+    id: result[0].ID_usuario,
     NOMBRE: result[0].NOMBRE,
     CORREO: result[0].CORREO,
     Username: result[0].Username,
@@ -149,7 +149,7 @@ app.post('/login', (req, res) => {
 // Buscar usuarios por username
 app.get('/usuarios', (req, res) => {
     const q = req.query.q || '';
-    const sql = 'SELECT ID_USUARIO, Username, img_p, puntos FROM USUARIO WHERE Username LIKE ?';
+    const sql = 'SELECT ID_usuario, Username, img_p, puntos FROM usuario WHERE Username LIKE ?';
     db.query(sql, [`%${q}%`], (err, result) => {
         if(err) return res.status(500).json(err);
         res.json(result);
@@ -161,9 +161,9 @@ app.get('/usuarios', (req, res) => {
 app.get('/amigos/:userid', (req, res) => {
     const userid = req.params.userid;
     const sql = `
-        SELECT u.ID_USUARIO, u.Username, u.img_p, u.puntos
-        FROM AMIGOS a
-        JOIN USUARIO u ON (u.ID_USUARIO = a.ID_USUARIO2 AND a.ID_USUARIO1 = ?)
+        SELECT u.ID_usuario, u.Username, u.img_p, u.puntos
+        FROM amigos a
+        JOIN usuario u ON (u.ID_usuario = a.ID_usuario2 AND a.ID_usuario1 = ?)
     `;
     db.query(sql, [userid], (err, result) => {
         if(err) return res.status(500).json(err);
@@ -177,7 +177,7 @@ app.post('/agregar-amigo', (req, res) => {
     const { usuario_id, amigo_id } = req.body;
     if(!usuario_id || !amigo_id) return res.status(400).json({msg:'Faltan datos'});
 
-    const sql = 'INSERT INTO AMIGOS (ID_USUARIO1, ID_USUARIO2) VALUES (?, ?)';
+    const sql = 'INSERT INTO amigos (ID_usuario1, ID_usuario2) VALUES (?, ?)';
     db.query(sql, [usuario_id, amigo_id], (err, result) => {
         if(err) return res.status(500).json({msg:'Error al agregar amigo'});
         res.json({msg:'Amigo agregado'});
