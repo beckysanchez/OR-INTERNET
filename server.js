@@ -7,23 +7,35 @@ const multer = require('multer'); // ⚠️ Asegúrate de instalarlo con npm i m
 const app = express();
 
 // Middlewares
+// 🧠 Configurar CORS correctamente
 const allowedOrigins = [
-  'https://or-internet.onrender.com', // tu frontend en Render
-  'http://localhost:3000',             // útil si pruebas localmente
+  'https://or-internet.onrender.com', // frontend Render
+  'http://localhost:3000',            // si pruebas local
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir solicitudes sin origen (como las de Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('No permitido por CORS'));
-    }
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Permitir solicitudes sin origen (como Postman o extensiones)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.warn('Bloqueado por CORS:', origin);
+        return callback(new Error('No permitido por CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// 🚨 Asegurar encabezados CORS para todas las respuestas
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://or-internet.onrender.com');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 
 // body-parser solo para JSON y URL-encoded
