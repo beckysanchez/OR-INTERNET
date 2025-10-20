@@ -225,7 +225,7 @@
             async function renderFriends() {
                 if(!user) return;
 
-                const res = await fetch(`https://sociomatch-backend.onrender.com/amigos/${user.ID_USUARIO}`);
+                const res = await fetch(`https://or-internet.onrender.com/amigos/${user.ID_USUARIO}`);
                 friends = await res.json();
 
                 friendsList.innerHTML = '';
@@ -254,7 +254,7 @@
                 searchResults.innerHTML = '';
                 if(!query) return;
 
-                const res = await fetch(`https://sociomatch-backend.onrender.com/usuarios?q=${query}`);
+                const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${query}`);
                 const users = await res.json();
 
                 users.forEach(u => {
@@ -274,7 +274,7 @@
                     // ---------- MODIFICACIÓN AQUÍ ----------
                     div.querySelector('button').addEventListener('click', async () => {
                         try {
-                            const res = await fetch('https://sociomatch-backend.onrender.com/agregar-amigo', {
+                            const res = await fetch('https://or-internet.onrender.com/agregar-amigo', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ usuario_id: user.ID_USUARIO, amigo_id: u.ID_USUARIO })
