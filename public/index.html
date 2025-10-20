@@ -54,7 +54,7 @@
                 <button class="btn btn-light mb-2">🇧🇷 Brasil</button>
                 <button class="btn btn-light mb-2">🇪🇸 España</button>
                 <button class="btn btn-light mb-2">🇫🇷 Francia</button>
-                <button class="btn btn-light mb-2">🇩🇪 Alemaniia</button>
+                <button class="btn btn-light mb-2">🇩🇪 Alemania</button>
             </aside>
 
             <!-- Partidos y amigos -->
@@ -93,7 +93,7 @@
                     <!-- amigos con búsqueda y chat -->
                     <div class="col-md-6">
                         <div class="card p-3">
-                            <h6 class="fw-bold">amigos</h6>
+                            <h6 class="fw-bold">Amigos</h6>
 
                             <!-- Buscador -->
                             <input type="text" id="searchUser" class="form-control mb-2" placeholder="Buscar usuario por username">
@@ -120,19 +120,28 @@
                     </div>
                 </div>
                 <div class="card p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold m-0">Chat</h6>
-                        <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
-                            <i class="bi bi-camera-video-fill"></i>
-                        </button>
-                    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-bold m-0">Chat</h6>
+        <div class="d-flex align-items-center gap-2">
+            <!-- Botón de cámara -->
+            <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
+                <i class="bi bi-camera-video-fill"></i>
+            </button>
 
-                    <div class="chat-box mb-2"></div>
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
-                        <button class="btn btn-primary">Enviar</button>
-                    </div>
-                </div>
+            <!-- Nuevo botón "+" -->
+            <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-box mb-2"></div>
+    <div class="input-group">
+        <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
+        <button class="btn btn-primary">Enviar</button>
+    </div>
+</div>
+
 
                 <div id="videoPopup" class="video-popup" style="display:none;">
                     <div class="video-content">
