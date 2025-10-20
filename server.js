@@ -7,14 +7,24 @@ const multer = require('multer'); // ⚠️ Asegúrate de instalarlo con npm i m
 const app = express();
 
 // Middlewares
+const allowedOrigins = [
+  'https://or-internet.onrender.com', // tu frontend en Render
+  'http://localhost:3000',             // útil si pruebas localmente
+];
+
 app.use(cors({
-  origin: [
-    'https://or-internet.onrender.com', // 🌐 tu frontend en Render
-    'https://sociomatch-backend.onrender.com' // opcionalmente tu backend si lo usas desde otro entorno
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como las de Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true,
 }));
+
 
 // body-parser solo para JSON y URL-encoded
 app.use(express.json());
