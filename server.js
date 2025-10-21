@@ -125,7 +125,8 @@ app.post('/login', (req, res) => {
 // 🔍 Buscar usuarios (para buscador de amigos)
 app.get('/usuarios', (req, res) => {
   const q = req.query.q || '';
-  const sql = 'SELECT id_usuario, username, img_p, puntos FROM usuario WHERE username LIKE ?';
+  const sql = 'SELECT ID_USUARIO, Username, img_p, puntos FROM usuario WHERE Username LIKE ?';
+  
   db.query(sql, [`%${q}%`], (err, result) => {
     if (err) {
       console.error('❌ Error al consultar usuarios:', err);
@@ -135,7 +136,8 @@ app.get('/usuarios', (req, res) => {
   });
 });
 
-// ✅ Agregar amigo
+
+// 🤝 Agregar amigo
 app.post('/agregar-amigo', (req, res) => {
   const { usuario_id, amigo_id } = req.body;
 
@@ -143,7 +145,10 @@ app.post('/agregar-amigo', (req, res) => {
     return res.status(400).json({ msg: 'Faltan datos' });
   }
 
-  const sql = 'INSERT INTO amigos (id_usuario1, id_usuario2) VALUES (?, ?)';
+  const sql = `
+    INSERT INTO amigos (ID_USUARIO1, ID_USUARIO2, FECHA_AMISTAD)
+    VALUES (?, ?, NOW())
+  `;
   db.query(sql, [usuario_id, amigo_id], (err, result) => {
     if (err) {
       console.error('❌ Error al agregar amigo:', err);
@@ -153,15 +158,17 @@ app.post('/agregar-amigo', (req, res) => {
   });
 });
 
-// ✅ Obtener amigos de un usuario
+
+// 📋 Obtener lista de amigos de un usuario
 app.get('/amigos/:userId', (req, res) => {
   const { userId } = req.params;
   const sql = `
-    SELECT u.id_usuario, u.username, u.img_p, u.puntos
+    SELECT u.ID_USUARIO, u.Username, u.img_p, u.puntos
     FROM amigos a
-    JOIN usuario u ON u.id_usuario = a.id_usuario2
-    WHERE a.id_usuario1 = ?
+    JOIN usuario u ON u.ID_USUARIO = a.ID_USUARIO2
+    WHERE a.ID_USUARIO1 = ?
   `;
+
   db.query(sql, [userId], (err, result) => {
     if (err) {
       console.error('❌ Error al obtener amigos:', err);
