@@ -261,70 +261,62 @@
             }
 
             // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
-            searchInput.addEventListener('input', async () => {
-                const query = searchInput.value.trim();
-                searchResults.innerHTML = '';
-                if (!query) return;
+           searchInput.addEventListener('input', async () => {
+  const query = searchInput.value.trim();
+  searchResults.innerHTML = '';
+  if (!query) return;
 
-                try {
-                    const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${encodeURIComponent(query)}`);
-                    const users = await res.json();
+  try {
+    const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${query}`);
+    const users = await res.json();
 
-                    if (!Array.isArray(users) || users.length === 0) {
-                        searchResults.innerHTML = `<p class="text-muted small">No se encontraron usuarios</p>`;
-                        return;
-                    }
+    console.log('👀 Usuarios recibidos:', users); // <-- añade esto
 
-                    users.forEach(u => {
-                        // 🧠 Evita mostrarte a ti misma
-                        if (u.id_usuario === user.id) return;
+    users.forEach(u => {
+      // Evitar mostrar al mismo usuario o amigos ya agregados
+      if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
 
-                        // 🧠 Evita mostrar amigos que ya tienes
-                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
-
-
-                        const div = document.createElement('div');
-                        div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
-                        div.innerHTML = `
+      const div = document.createElement('div');
+      div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
+      div.innerHTML = `
         <div class="d-flex align-items-center">
           <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
-            class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">
-          <span>${u.Username}</span>
+               class="rounded-circle me-2"
+               style="width:30px;height:30px;object-fit:cover;">
+          ${u.Username}
         </div>
         <button class="btn btn-sm btn-primary">Agregar</button>
       `;
-                        searchResults.appendChild(div);
+      searchResults.appendChild(div);
 
-                        // 🧩 Botón "Agregar amigo"
-                        div.querySelector('button').addEventListener('click', async () => {
-                            try {
-                                const resAdd = await fetch('https://or-internet.onrender.com/agregar-amigo', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+      div.querySelector('button').addEventListener('click', async () => {
+        try {
+          const res = await fetch('https://or-internet.onrender.com/agregar-amigo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+          });
+          const data = await res.json();
+          console.log('📩 Respuesta al agregar amigo:', data);
+          if (res.ok) {
+            alert('Amigo agregado correctamente');
+            renderFriends();
+            searchResults.innerHTML = '';
+            searchInput.value = '';
+          } else {
+            alert('Error al agregar amigo: ' + (data.msg || ''));
+          }
+        } catch (err) {
+          console.error('Error en fetch:', err);
+          alert('Error al conectar con el servidor');
+        }
+      });
+    });
 
-                                });
-
-                                const data = await resAdd.json();
-                                if (resAdd.ok) {
-                                    alert('✅ Amigo agregado correctamente');
-                                    renderFriends(); // refresca la lista
-                                    searchResults.innerHTML = '';
-                                    searchInput.value = '';
-                                } else {
-                                    alert('⚠️ ' + (data.msg || 'Error al agregar amigo'));
-                                }
-                            } catch (err) {
-                                console.error('❌ Error al conectar con el servidor:', err);
-                                alert('No se pudo conectar con el servidor.');
-                            }
-                        });
-                    });
-                } catch (err) {
-                    console.error('❌ Error en la búsqueda:', err);
-                    searchResults.innerHTML = `<p class="text-danger small">Error al cargar usuarios</p>`;
-                }
-            });
+  } catch (error) {
+    console.error('❌ Error cargando usuarios:', error);
+  }
+});
 
 
             function openChat(friendUsername) {
