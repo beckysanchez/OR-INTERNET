@@ -363,58 +363,57 @@
             renderFriends();
         });
     </script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        const socket = io('https://or-internet.onrender.com');
-        const user = JSON.parse(localStorage.getItem('usuario')); // ← de tu login
+  <!-- SOCKET.IO CHAT ENTRE DOS CUENTAS -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  // Conexión con tu backend (usa tu dominio de Render)
+  const socket = io('https://or-internet.onrender.com');
 
-        // 1️⃣ Registrar usuario al conectarse
-        socket.emit('registrarUsuario', user.id);
+  // Simulamos usuarios con URL (?user=1 o ?user=2)
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = parseInt(urlParams.get('user')) || 1;  // por defecto usuario 1
+  const amigoId = userId === 1 ? 2 : 1; // el otro usuario
 
-        // 2️⃣ Recibir mensajes en tiempo real
-        socket.on('recibirMensaje', (msg) => {
-            if (msg.de === currentChatId) {
-                mostrarMensaje(msg.texto, false);
-            }
-        });
+  console.log(`🟢 Conectado como usuario ${userId}, chateando con ${amigoId}`);
 
-        // 3️⃣ Enviar mensajes privados
-        function enviarMensajePrivado(destinatarioId, texto) {
-            socket.emit('mensajePrivado', {
-                de: user.id,
-                para: destinatarioId,
-                texto
-            });
-        }
+  // Registramos el usuario en el servidor
+  socket.emit('registrarUsuario', userId);
 
-        // 👇 tus elementos del chat
-        const input = document.querySelector('.input-group input');
-        const sendBtn = document.querySelector('.input-group button');
-        const chatBox = document.querySelector('.chat-box');
-        let currentChatId = null; // se actualiza al abrir chat con alguien
+  // Referencias a elementos del chat
+  const input = document.querySelector('.input-group input');
+  const sendBtn = document.querySelector('.input-group button');
+  const chatBox = document.querySelector('.chat-box');
 
-        function openChat(friendUsername, friendId) {
-            currentChatId = friendId;
-            chatBox.innerHTML = '';
-            input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
-            sendBtn.onclick = () => {
-                const text = input.value.trim();
-                if (!text) return;
-                enviarMensajePrivado(friendId, text);
-                mostrarMensaje(text, true);
-                input.value = '';
-            };
-        }
+  // Mostrar mensajes en pantalla
+  function mostrarMensaje(texto, enviado) {
+    const div = document.createElement('div');
+    div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
+    div.textContent = texto;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 
-        // Mostrar mensajes en pantalla
-        function mostrarMensaje(text, enviado) {
-            const div = document.createElement('div');
-            div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
-            div.textContent = text;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-    </script>
+  // Recibir mensaje desde el servidor
+  socket.on('recibirMensaje', (msg) => {
+    console.log('📩 Mensaje recibido:', msg);
+    mostrarMensaje(`${msg.de}: ${msg.texto}`, false);
+  });
+
+  // Enviar mensaje
+  sendBtn.addEventListener('click', () => {
+    const texto = input.value.trim();
+    if (!texto) return;
+    socket.emit('mensajePrivado', { de: userId, para: amigoId, texto });
+    mostrarMensaje(`Yo: ${texto}`, true);
+    input.value = '';
+  });
+
+  // Enviar con Enter
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendBtn.click();
+  });
+</script>
+
 
 </body>
 
