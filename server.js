@@ -122,6 +122,56 @@ app.post('/login', (req, res) => {
   });
 });
 
+// 🔍 Buscar usuarios (para buscador de amigos)
+app.get('/usuarios', (req, res) => {
+  const q = req.query.q || '';
+  const sql = 'SELECT id_usuario, username, img_p, puntos FROM usuario WHERE username LIKE ?';
+  db.query(sql, [`%${q}%`], (err, result) => {
+    if (err) {
+      console.error('❌ Error al consultar usuarios:', err);
+      return res.status(500).json({ msg: 'Error al obtener usuarios' });
+    }
+    res.json(result);
+  });
+});
+
+// ✅ Agregar amigo
+app.post('/agregar-amigo', (req, res) => {
+  const { usuario_id, amigo_id } = req.body;
+
+  if (!usuario_id || !amigo_id) {
+    return res.status(400).json({ msg: 'Faltan datos' });
+  }
+
+  const sql = 'INSERT INTO amigos (id_usuario1, id_usuario2) VALUES (?, ?)';
+  db.query(sql, [usuario_id, amigo_id], (err, result) => {
+    if (err) {
+      console.error('❌ Error al agregar amigo:', err);
+      return res.status(500).json({ msg: 'Error al agregar amigo' });
+    }
+    res.json({ msg: 'Amigo agregado correctamente' });
+  });
+});
+
+// ✅ Obtener amigos de un usuario
+app.get('/amigos/:userId', (req, res) => {
+  const { userId } = req.params;
+  const sql = `
+    SELECT u.id_usuario, u.username, u.img_p, u.puntos
+    FROM amigos a
+    JOIN usuario u ON u.id_usuario = a.id_usuario2
+    WHERE a.id_usuario1 = ?
+  `;
+  db.query(sql, [userId], (err, result) => {
+    if (err) {
+      console.error('❌ Error al obtener amigos:', err);
+      return res.status(500).json({ msg: 'Error al obtener amigos' });
+    }
+    res.json(result);
+  });
+});
+
+
 // ====================
 // 📌 RUTAS DE GRUPOS
 // ====================

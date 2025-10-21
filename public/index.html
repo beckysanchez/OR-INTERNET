@@ -7,7 +7,7 @@
     <title>SocioMatch</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-   <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 
 <body>
@@ -96,7 +96,8 @@
                             <h6 class="fw-bold">Amigos</h6>
 
                             <!-- Buscador -->
-                            <input type="text" id="searchUser" class="form-control mb-2" placeholder="Buscar usuario por username">
+                            <input type="text" id="searchUser" class="form-control mb-2"
+                                placeholder="Buscar usuario por username">
 
                             <!-- Resultados de búsqueda -->
                             <div id="searchResults" class="mb-2"></div>
@@ -120,27 +121,27 @@
                     </div>
                 </div>
                 <div class="card p-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="fw-bold m-0">Chat</h6>
-        <div class="d-flex align-items-center gap-2">
-            <!-- Botón de cámara -->
-            <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
-                <i class="bi bi-camera-video-fill"></i>
-            </button>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold m-0">Chat</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Botón de cámara -->
+                            <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
+                                <i class="bi bi-camera-video-fill"></i>
+                            </button>
 
-            <!-- Nuevo botón "+" -->
-            <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
-                <i class="bi bi-plus-lg"></i>
-            </button>
-        </div>
-    </div>
+                            <!-- Nuevo botón "+" -->
+                            <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </div>
 
-    <div class="chat-box mb-2"></div>
-    <div class="input-group">
-        <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
-        <button class="btn btn-primary">Enviar</button>
-    </div>
-</div>
+                    <div class="chat-box mb-2"></div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
+                        <button class="btn btn-primary">Enviar</button>
+                    </div>
+                </div>
 
 
                 <div id="videoPopup" class="video-popup" style="display:none;">
@@ -218,7 +219,7 @@
                 location.reload();
             });
 
-            
+
 
             // ---------- amigos y chat con DB real ----------
             const searchInput = document.getElementById('searchUser');
@@ -232,15 +233,15 @@
             let chats = {};
 
             async function renderFriends() {
-                if(!user) return;
+                if (!user) return;
 
-                const res = await fetch(`https://or-internet.onrender.com/amigos/${user.ID_usuario}`);
+                const res = await fetch(`https://or-internet.onrender.com/amigos/${user.id_usuario}`);
                 friends = await res.json();
 
                 friendsList.innerHTML = '';
                 friends.forEach(f => {
                     const div = document.createElement('div');
-                    div.classList.add('d-flex','justify-content-between','align-items-center','border-bottom','py-2');
+                    div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border-bottom', 'py-2');
                     div.innerHTML = `
                         <div>
                             <img src="${f.img_p || 'img/usuario-generico.png'}" class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">
@@ -253,37 +254,37 @@
                     friendsList.appendChild(div);
 
                     div.querySelector('.btnMessage').addEventListener('click', () => {
-  openChat(f.Username, f.ID_USUARIO); // ahora enviamos el id
-});
+                        openChat(f.Username, f.id_usuario); // ahora enviamos el id
+                    });
 
                 });
             }
 
-           // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
-searchInput.addEventListener('input', async () => {
-  const query = searchInput.value.trim();
-  searchResults.innerHTML = '';
-  if (!query) return;
+            // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
+            searchInput.addEventListener('input', async () => {
+                const query = searchInput.value.trim();
+                searchResults.innerHTML = '';
+                if (!query) return;
 
-  try {
-    const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${encodeURIComponent(query)}`);
-    const users = await res.json();
+                try {
+                    const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${encodeURIComponent(query)}`);
+                    const users = await res.json();
 
-    if (!Array.isArray(users) || users.length === 0) {
-      searchResults.innerHTML = `<p class="text-muted small">No se encontraron usuarios</p>`;
-      return;
-    }
+                    if (!Array.isArray(users) || users.length === 0) {
+                        searchResults.innerHTML = `<p class="text-muted small">No se encontraron usuarios</p>`;
+                        return;
+                    }
 
-    users.forEach(u => {
-      // 🧠 Evita mostrarte a ti misma
-      if (u.ID_USUARIO === user.id) return;
+                    users.forEach(u => {
+                        // 🧠 Evita mostrarte a ti misma
+                        if (u.id_usuario === user.id) return;
 
-      // 🧠 Evita mostrar amigos que ya tienes
-      if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO)) return;
+                        // 🧠 Evita mostrar amigos que ya tienes
+                        if (friends.some(f => f.id_usuario === u.id_usuario)) return;
 
-      const div = document.createElement('div');
-      div.classList.add('d-flex','justify-content-between','align-items-center','border','p-1','mb-1','rounded');
-      div.innerHTML = `
+                        const div = document.createElement('div');
+                        div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
+                        div.innerHTML = `
         <div class="d-flex align-items-center">
           <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
             class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">
@@ -291,45 +292,45 @@ searchInput.addEventListener('input', async () => {
         </div>
         <button class="btn btn-sm btn-primary">Agregar</button>
       `;
-      searchResults.appendChild(div);
+                        searchResults.appendChild(div);
 
-      // 🧩 Botón "Agregar amigo"
-      div.querySelector('button').addEventListener('click', async () => {
-        try {
-          const resAdd = await fetch('https://or-internet.onrender.com/agregar-amigo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              usuario_id: user.id,     // 👈 tu usuario logueado
-              amigo_id: u.ID_USUARIO   // 👈 el usuario encontrado
-            })
-          });
+                        // 🧩 Botón "Agregar amigo"
+                        div.querySelector('button').addEventListener('click', async () => {
+                            try {
+                                const resAdd = await fetch('https://or-internet.onrender.com/agregar-amigo', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        usuario_id: user.id,     // 👈 tu usuario logueado
+                                        amigo_id: u.id_usuario // 👈 el usuario encontrado
+                                    })
+                                });
 
-          const data = await resAdd.json();
-          if (resAdd.ok) {
-            alert('✅ Amigo agregado correctamente');
-            renderFriends(); // refresca la lista
-            searchResults.innerHTML = '';
-            searchInput.value = '';
-          } else {
-            alert('⚠️ ' + (data.msg || 'Error al agregar amigo'));
-          }
-        } catch (err) {
-          console.error('❌ Error al conectar con el servidor:', err);
-          alert('No se pudo conectar con el servidor.');
-        }
-      });
-    });
-  } catch (err) {
-    console.error('❌ Error en la búsqueda:', err);
-    searchResults.innerHTML = `<p class="text-danger small">Error al cargar usuarios</p>`;
-  }
-});
+                                const data = await resAdd.json();
+                                if (resAdd.ok) {
+                                    alert('✅ Amigo agregado correctamente');
+                                    renderFriends(); // refresca la lista
+                                    searchResults.innerHTML = '';
+                                    searchInput.value = '';
+                                } else {
+                                    alert('⚠️ ' + (data.msg || 'Error al agregar amigo'));
+                                }
+                            } catch (err) {
+                                console.error('❌ Error al conectar con el servidor:', err);
+                                alert('No se pudo conectar con el servidor.');
+                            }
+                        });
+                    });
+                } catch (err) {
+                    console.error('❌ Error en la búsqueda:', err);
+                    searchResults.innerHTML = `<p class="text-danger small">Error al cargar usuarios</p>`;
+                }
+            });
 
 
             function openChat(friendUsername) {
                 chats = JSON.parse(localStorage.getItem('chats')) || {};
-                if(!chats[friendUsername]) chats[friendUsername] = [];
+                if (!chats[friendUsername]) chats[friendUsername] = [];
                 chatBox.innerHTML = '';
                 chats[friendUsername].forEach(msg => {
                     const div = document.createElement('div');
@@ -343,7 +344,7 @@ searchInput.addEventListener('input', async () => {
 
                 sendBtn.onclick = () => {
                     const text = input.value.trim();
-                    if(!text) return;
+                    if (!text) return;
                     chats[friendUsername].push({ text, sent: true });
                     localStorage.setItem('chats', JSON.stringify(chats));
 
@@ -370,58 +371,59 @@ searchInput.addEventListener('input', async () => {
             renderFriends();
         });
     </script>
- <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-  const socket = io('https://sociomatch-backend.onrender.com');
-  const user = JSON.parse(localStorage.getItem('usuario')); // ← de tu login
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('https://sociomatch-backend.onrender.com');
+        const user = JSON.parse(localStorage.getItem('usuario')); // ← de tu login
 
-  // 1️⃣ Registrar usuario al conectarse
-  socket.emit('registrarUsuario', user.id);
+        // 1️⃣ Registrar usuario al conectarse
+        socket.emit('registrarUsuario', user.id);
 
-  // 2️⃣ Recibir mensajes en tiempo real
-  socket.on('recibirMensaje', (msg) => {
-    if (msg.de === currentChatId) {
-      mostrarMensaje(msg.texto, false);
-    }
-  });
+        // 2️⃣ Recibir mensajes en tiempo real
+        socket.on('recibirMensaje', (msg) => {
+            if (msg.de === currentChatId) {
+                mostrarMensaje(msg.texto, false);
+            }
+        });
 
-  // 3️⃣ Enviar mensajes privados
-  function enviarMensajePrivado(destinatarioId, texto) {
-    socket.emit('mensajePrivado', {
-      de: user.id,
-      para: destinatarioId,
-      texto
-    });
-  }
+        // 3️⃣ Enviar mensajes privados
+        function enviarMensajePrivado(destinatarioId, texto) {
+            socket.emit('mensajePrivado', {
+                de: user.id,
+                para: destinatarioId,
+                texto
+            });
+        }
 
-  // 👇 tus elementos del chat
-  const input = document.querySelector('.input-group input');
-  const sendBtn = document.querySelector('.input-group button');
-  const chatBox = document.querySelector('.chat-box');
-  let currentChatId = null; // se actualiza al abrir chat con alguien
+        // 👇 tus elementos del chat
+        const input = document.querySelector('.input-group input');
+        const sendBtn = document.querySelector('.input-group button');
+        const chatBox = document.querySelector('.chat-box');
+        let currentChatId = null; // se actualiza al abrir chat con alguien
 
-  function openChat(friendUsername, friendId) {
-    currentChatId = friendId;
-    chatBox.innerHTML = '';
-    input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
-    sendBtn.onclick = () => {
-      const text = input.value.trim();
-      if (!text) return;
-      enviarMensajePrivado(friendId, text);
-      mostrarMensaje(text, true);
-      input.value = '';
-    };
-  }
+        function openChat(friendUsername, friendId) {
+            currentChatId = friendId;
+            chatBox.innerHTML = '';
+            input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
+            sendBtn.onclick = () => {
+                const text = input.value.trim();
+                if (!text) return;
+                enviarMensajePrivado(friendId, text);
+                mostrarMensaje(text, true);
+                input.value = '';
+            };
+        }
 
-  // Mostrar mensajes en pantalla
-  function mostrarMensaje(text, enviado) {
-    const div = document.createElement('div');
-    div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
-    div.textContent = text;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-</script>
+        // Mostrar mensajes en pantalla
+        function mostrarMensaje(text, enviado) {
+            const div = document.createElement('div');
+            div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
+            div.textContent = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 
 </body>
+
 </html>
