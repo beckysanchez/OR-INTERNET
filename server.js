@@ -138,6 +138,7 @@ app.get('/usuarios', (req, res) => {
 
 
 // 🤝 Agregar amigo
+// 📩 Agregar amigo
 app.post('/agregar-amigo', (req, res) => {
   const { usuario_id, amigo_id } = req.body;
 
@@ -146,17 +147,24 @@ app.post('/agregar-amigo', (req, res) => {
   }
 
   const sql = `
-    INSERT INTO amigos (ID_USUARIO1, ID_USUARIO2, FECHA_AMISTAD)
+    INSERT INTO amistad (ID_USUARIO1, ID_USUARIO2, FECHA_AMISTAD)
     VALUES (?, ?, NOW())
   `;
-  db.query(sql, [usuario_id, amigo_id], (err, result) => {
+
+  db.query(sql, [usuario_id, amigo_id], (err) => {
     if (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ msg: 'Ya son amigos' });
+      }
       console.error('❌ Error al agregar amigo:', err);
-      return res.status(500).json({ msg: 'Error al agregar amigo' });
+      return res.status(500).json({ msg: 'Error en el servidor' });
     }
+
+    console.log(`✅ Nueva amistad: ${usuario_id} ↔ ${amigo_id}`);
     res.json({ msg: 'Amigo agregado correctamente' });
   });
 });
+
 
 
 // 📋 Obtener lista de amigos de un usuario

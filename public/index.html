@@ -295,6 +295,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+
           });
           const data = await res.json();
           console.log('📩 Respuesta al agregar amigo:', data);
