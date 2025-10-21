@@ -280,7 +280,8 @@
                         if (u.id_usuario === user.id) return;
 
                         // 🧠 Evita mostrar amigos que ya tienes
-                        if (friends.some(f => f.id_usuario === u.id_usuario)) return;
+                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
+
 
                         const div = document.createElement('div');
                         div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
@@ -300,10 +301,8 @@
                                 const resAdd = await fetch('https://or-internet.onrender.com/agregar-amigo', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        usuario_id: user.id,     // 👈 tu usuario logueado
-                                        amigo_id: u.id_usuario // 👈 el usuario encontrado
-                                    })
+                                    body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+
                                 });
 
                                 const data = await resAdd.json();
