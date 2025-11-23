@@ -11,17 +11,16 @@
 </head>
 
 <body>
-    <!-- HEADER -->
     <header>
         <div class="container d-flex justify-content-between align-items-center py-3">
             <div class="d-flex align-items-center gap-4">
                 <h4 class="text-primary fw-bold m-0">⚽ SocioMatch</h4>
                 <nav class="d-none d-md-flex gap-3">
-                    <a href="iniciosesion.html" class="btn btn-link text-decoration-none active">Inicio de sesion</a>
-                    <a href="grupo.html" class="btn btn-link text-decoration-none">Crear grupo</a>
-                    <a href="metas.html" class="btn btn-link text-decoration-none">Metas Diarias</a>
-                    <a href="predicciones.html" class="btn btn-link text-decoration-none">Predicciones</a>
-                    <a href="registro.html" class="btn btn-link text-decoration-none">Registro</a>
+                    <a href="iniciosesion.php" class="btn btn-link text-decoration-none active">Inicio de sesion</a>
+                    <a href="grupo.php" class="btn btn-link text-decoration-none">Crear grupo</a>
+                    <a href="metas.php" class="btn btn-link text-decoration-none">Metas Diarias</a>
+                    <a href="predicciones.php" class="btn btn-link text-decoration-none">Predicciones</a>
+                    <a href="registro.php" class="btn btn-link text-decoration-none">Registro</a>
                 </nav>
             </div>
 
@@ -43,10 +42,8 @@
         </div>
     </header>
 
-    <!-- MAIN -->
     <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Sidebar -->
             <aside class="col-lg-2 d-none d-lg-block sidebar">
                 <h6 class="text-muted">Selecciones</h6>
                 <button class="btn btn-light mb-2">🇲🇽 México</button>
@@ -57,7 +54,6 @@
                 <button class="btn btn-light mb-2">🇩🇪 Alemania</button>
             </aside>
 
-            <!-- Partidos y amigos -->
             <section class="col-lg-7">
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -90,26 +86,21 @@
                         </div>
                     </div>
 
-                    <!-- amigos con búsqueda y chat -->
                     <div class="col-md-6">
                         <div class="card p-3">
                             <h6 class="fw-bold">Amigos</h6>
 
-                            <!-- Buscador -->
                             <input type="text" id="searchUser" class="form-control mb-2"
                                 placeholder="Buscar usuario por username">
 
-                            <!-- Resultados de búsqueda -->
                             <div id="searchResults" class="mb-2"></div>
 
-                            <!-- Lista de amigos -->
                             <div id="friendsList" class="mt-3"></div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Detalles y Chat -->
             <aside class="col-lg-3">
                 <div class="card p-3 mb-3">
                     <h6 class="fw-bold">España</h6>
@@ -124,12 +115,10 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="fw-bold m-0">Chat</h6>
                         <div class="d-flex align-items-center gap-2">
-                            <!-- Botón de cámara -->
                             <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
                                 <i class="bi bi-camera-video-fill"></i>
                             </button>
 
-                            <!-- Nuevo botón "+" -->
                             <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
@@ -166,6 +155,13 @@
     </footer>
 
     <script>
+        // ******************************************************
+        // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
+        // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
+        const BASE_API_URL = 'http://localhost/sociomatch/api'; 
+        // ******************************************************
+
+
         // Videollamada
         const btnVideollamada = document.getElementById("btnVideollamada");
         const videoPopup = document.getElementById("videoPopup");
@@ -196,8 +192,8 @@
 
             const userPoints = document.getElementById('userPoints');
             const profileImg = document.getElementById('profileImg');
-            const loginBtn = document.querySelector('nav a[href="iniciosesion.html"]');
-            const registerBtn = document.querySelector('nav a[href="registro.html"]');
+            const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
+            const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
             const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
             if (user) {
@@ -235,7 +231,11 @@
             async function renderFriends() {
                 if (!user) return;
 
-                const res = await fetch(`https://or-internet.onrender.com/amigos/${user.id_usuario}`);
+                // ******************************************************
+                // CAMBIO DE URL: De Render a XAMPP (API PHP)
+                const res = await fetch(`${BASE_API_URL}/amigos.php?id=${user.id_usuario}`); 
+                // ******************************************************
+                
                 friends = await res.json();
 
                 friendsList.innerHTML = '';
@@ -261,63 +261,69 @@
             }
 
             // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
-           searchInput.addEventListener('input', async () => {
-  const query = searchInput.value.trim();
-  searchResults.innerHTML = '';
-  if (!query) return;
+            searchInput.addEventListener('input', async () => {
+                const query = searchInput.value.trim();
+                searchResults.innerHTML = '';
+                if (!query) return;
 
-  try {
-    const res = await fetch(`https://or-internet.onrender.com/usuarios?q=${query}`);
-    const users = await res.json();
+                try {
+                    // ******************************************************
+                    // CAMBIO DE URL: De Render a XAMPP (API PHP)
+                    const res = await fetch(`${BASE_API_URL}/usuarios.php?q=${query}`); 
+                    // ******************************************************
+                    const users = await res.json();
 
-    console.log('👀 Usuarios recibidos:', users); // <-- añade esto
+                    console.log('👀 Usuarios recibidos:', users);
 
-    users.forEach(u => {
-      // Evitar mostrar al mismo usuario o amigos ya agregados
-      if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
+                    users.forEach(u => {
+                        // Evitar mostrar al mismo usuario o amigos ya agregados
+                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
 
-      const div = document.createElement('div');
-      div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
-      div.innerHTML = `
-        <div class="d-flex align-items-center">
-          <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
-               class="rounded-circle me-2"
-               style="width:30px;height:30px;object-fit:cover;">
-          ${u.Username}
-        </div>
-        <button class="btn btn-sm btn-primary">Agregar</button>
-      `;
-      searchResults.appendChild(div);
+                        const div = document.createElement('div');
+                        div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
+                        div.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
+                                    class="rounded-circle me-2"
+                                    style="width:30px;height:30px;object-fit:cover;">
+                                ${u.Username}
+                            </div>
+                            <button class="btn btn-sm btn-primary">Agregar</button>
+                        `;
+                        searchResults.appendChild(div);
 
-      div.querySelector('button').addEventListener('click', async () => {
-        try {
-          const res = await fetch('https://or-internet.onrender.com/agregar-amigo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+                        div.querySelector('button').addEventListener('click', async () => {
+                            try {
+                                // ******************************************************
+                                // CAMBIO DE URL: De Render a XAMPP (API PHP)
+                                const res = await fetch(`${BASE_API_URL}/agregar-amigo.php`, {
+                                // ******************************************************
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
 
-          });
-          const data = await res.json();
-          console.log('📩 Respuesta al agregar amigo:', data);
-          if (res.ok) {
-            alert('Amigo agregado correctamente');
-            renderFriends();
-            searchResults.innerHTML = '';
-            searchInput.value = '';
-          } else {
-            alert('Error al agregar amigo: ' + (data.msg || ''));
-          }
-        } catch (err) {
-          console.error('Error en fetch:', err);
-          alert('Error al conectar con el servidor');
-        }
-      });
-    });
+                                });
+                                const data = await res.json();
+                                console.log('📩 Respuesta al agregar amigo:', data);
+                                if (res.ok) {
+                                    alert('Amigo agregado correctamente');
+                                    renderFriends();
+                                    searchResults.innerHTML = '';
+                                    searchInput.value = '';
+                                } else {
+                                    alert('Error al agregar amigo: ' + (data.msg || ''));
+                                }
+                            } catch (err) {
+                                console.error('Error en fetch:', err);
+                                alert('Error al conectar con el servidor');
+                            }
+                        });
+                    });
 
-  } catch (error) {
-    console.error('❌ Error cargando usuarios:', error);
-  }
-});
+                } catch (error) {
+                    console.error('❌ Error cargando usuarios:', error);
+                }
+            });
 
 
             function openChat(friendUsername) {
@@ -363,57 +369,58 @@
             renderFriends();
         });
     </script>
-  <!-- SOCKET.IO CHAT ENTRE DOS CUENTAS -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-  // Conexión con tu backend (usa tu dominio de Render)
-  const socket = io('https://or-internet.onrender.com');
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // ******************************************************
+        // CAMBIO DE URL: De Render a XAMPP (Servidor de Sockets local)
+        const socket = io('http://localhost:3000'); 
+        // ******************************************************
 
-  // Simulamos usuarios con URL (?user=1 o ?user=2)
-  const urlParams = new URLSearchParams(window.location.search);
-  const userId = parseInt(urlParams.get('user')) || 1;  // por defecto usuario 1
-  const amigoId = userId === 1 ? 2 : 1; // el otro usuario
+        // Simulamos usuarios con URL (?user=1 o ?user=2)
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = parseInt(urlParams.get('user')) || 1;  // por defecto usuario 1
+        const amigoId = userId === 1 ? 2 : 1; // el otro usuario
 
-  console.log(`🟢 Conectado como usuario ${userId}, chateando con ${amigoId}`);
+        console.log(`🟢 Conectado como usuario ${userId}, chateando con ${amigoId}`);
 
-  // Registramos el usuario en el servidor
-  socket.emit('registrarUsuario', userId);
-  // equs
+        // Registramos el usuario en el servidor
+        socket.emit('registrarUsuario', userId);
+        // equs
 
-  // Referencias a elementos del chat
-  const input = document.querySelector('.input-group input');
-  const sendBtn = document.querySelector('.input-group button');
-  const chatBox = document.querySelector('.chat-box');
+        // Referencias a elementos del chat
+        const input = document.querySelector('.input-group input');
+        const sendBtn = document.querySelector('.input-group button');
+        const chatBox = document.querySelector('.chat-box');
 
-  // Mostrar mensajes en pantalla
-  function mostrarMensaje(texto, enviado) {
-    const div = document.createElement('div');
-    div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
-    div.textContent = texto;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
+        // Mostrar mensajes en pantalla
+        function mostrarMensaje(texto, enviado) {
+            const div = document.createElement('div');
+            div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
+            div.textContent = texto;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-  // Recibir mensaje desde el servidor
-  socket.on('recibirMensaje', (msg) => {
-    console.log('📩 Mensaje recibido:', msg);
-    mostrarMensaje(`${msg.de}: ${msg.texto}`, false);
-  });
+        // Recibir mensaje desde el servidor
+        socket.on('recibirMensaje', (msg) => {
+            console.log('📩 Mensaje recibido:', msg);
+            mostrarMensaje(`${msg.de}: ${msg.texto}`, false);
+        });
 
-  // Enviar mensaje
-  sendBtn.addEventListener('click', () => {
-    const texto = input.value.trim();
-    if (!texto) return;
-    socket.emit('mensajePrivado', { de: userId, para: amigoId, texto });
-    mostrarMensaje(`Yo: ${texto}`, true);
-    input.value = '';
-  });
+        // Enviar mensaje
+        sendBtn.addEventListener('click', () => {
+            const texto = input.value.trim();
+            if (!texto) return;
+            socket.emit('mensajePrivado', { de: userId, para: amigoId, texto });
+            mostrarMensaje(`Yo: ${texto}`, true);
+            input.value = '';
+        });
 
-  // Enviar con Enter
-  input.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendBtn.click();
-  });
-</script>
+        // Enviar con Enter
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendBtn.click();
+        });
+    </script>
 
 
 </body>

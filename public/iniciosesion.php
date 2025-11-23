@@ -13,12 +13,9 @@
 
     <header>
         <div class="container d-flex justify-content-between align-items-center py-3">
-            <!-- Logo + menú -->
             <div class="d-flex align-items-center gap-4">
                 <h4 class="text-primary fw-bold m-0">⚽ SocioMatch</h4>
-                <!-- Botones nuevos -->
-
-            </div>
+                </div>
 
         </div>
     </header>
@@ -30,22 +27,20 @@
             <button type="submit" class="btn btn-primary">Ingresar</button>
         </form>
         <script>
+            // ******************************************************
+            // CONSTANTE DE BASE URL LOCAL
+            // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
+            const BASE_API_URL = 'http://localhost/sociomatch/api';
+            // ******************************************************
+
             document.addEventListener("DOMContentLoaded", () => {
                 const user = JSON.parse(localStorage.getItem('usuario'));
                 if (user) {
-                    // Cambiar puntos
-                    const userPoints = document.getElementById('userPoints');
-                    userPoints.textContent = user.puntos;
-
-                    // Cambiar foto de perfil
-                    const profileImg = document.querySelector('header img');
-                    if (user.img_p) {
-                        profileImg.src = `data:image/png;base64,${user.img_p}`;
-                    } else {
-                        profileImg.src = 'img/image1.png'; // fallback
-                    }
+                    // Si el usuario ya está logueado, redirigir a index.php
+                    window.location.href = 'index.php'; 
                 }
             });
+
             const loginForm = document.getElementById('loginForm');
 
             loginForm.addEventListener('submit', async (e) => {
@@ -55,9 +50,13 @@
                 const contraseña = document.getElementById('contraseña').value;
 
                 try {
-                    const response = await fetch('https://or-internet.onrender.com/login', {
+                    // ******************************************************
+                    // CAMBIO DE URL: De Render a XAMPP (API PHP)
+                    const response = await fetch(`${BASE_API_URL}/login.php`, {
+                    // ******************************************************
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        // Nota: El backend PHP necesitará leer este JSON (usando file_get_contents("php://input"))
                         body: JSON.stringify({ CORREO: correo, CONTRA: contraseña })
                     });
 
@@ -66,23 +65,26 @@
                     if (response.ok) {
                         alert('¡Bienvenido!');
                         localStorage.setItem('usuario', JSON.stringify(data.user));
-                        // Redirigir a la página principal o dashboard
-                        window.location.href = 'index.html';
+                        // ******************************************************
+                        // Redirigir a la página principal (index.php)
+                        window.location.href = 'index.php'; 
+                        // ******************************************************
 
                     } else {
-                        alert(data.msg);
+                        // El backend PHP debe devolver un código de error (e.g., 401)
+                        alert(data.msg || 'Credenciales incorrectas');
                     }
 
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert('Ocurrió un error al iniciar sesión');
+                    console.error('Error de conexión:', error);
+                    alert('Ocurrió un error al conectar con el servidor local. Asegúrate de que XAMPP esté corriendo y el script login.php exista.');
                 }
             });
         </script>
 
 
         <div class="register-link">
-            ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
+            ¿No tienes cuenta? <a href="registro.php">Regístrate</a> 
         </div>
     </div>
 
