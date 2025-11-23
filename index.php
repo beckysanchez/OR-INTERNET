@@ -158,7 +158,7 @@
         // ******************************************************
         // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
         // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-        const BASE_API_URL = 'http://localhost/sociomatch/api'; 
+       const BASE_API_URL = 'http://localhost/OR_INTERNET/api'; 
         // ******************************************************
 
 
@@ -277,7 +277,7 @@
 
                     users.forEach(u => {
                         // Evitar mostrar al mismo usuario o amigos ya agregados
-                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id) return;
+                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id_usuario) return;
 
                         const div = document.createElement('div');
                         div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
@@ -296,11 +296,13 @@
                             try {
                                 // ******************************************************
                                 // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                                const res = await fetch(`${BASE_API_URL}/agregar-amigo.php`, {
+                                const res = await fetch(`${BASE_API_URL}/agregar_amigo.php`, {
                                 // ******************************************************
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ usuario_id: user.id, amigo_id: u.ID_USUARIO })
+                                 body: JSON.stringify({ usuario_id: user.id_usuario, amigo_id: u.ID_USUARIO })
+
+
 
                                 });
                                 const data = await res.json();

@@ -41,7 +41,7 @@ if (strlen($password) < 6) {
     exit;
 }
 
-//$passwordHash = password_hash($password, PASSWORD_BCRYPT);
+$passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
 $stmt_check = $conn->prepare("SELECT ID_USUARIO FROM usuario WHERE CORREO = ? OR Username = ?");
 $stmt_check->bind_param("ss", $correo, $username);
@@ -54,7 +54,7 @@ if ($result->num_rows > 0) {
     $stmt_insert = $conn->prepare(
         "INSERT INTO usuario (NOMBRE, CORREO, CONTRA, Username, puntos) VALUES (?, ?, ?, ?, 10)"
     );
-    $stmt_insert->bind_param("ssss", $nombre, $correo, $password, $username);
+    $stmt_insert->bind_param("ssss", $nombre, $correo, $passwordHash, $username);
 
     if ($stmt_insert->execute()) {
         $response['success'] = true;

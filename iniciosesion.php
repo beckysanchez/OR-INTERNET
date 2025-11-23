@@ -57,7 +57,11 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         // Nota: El backend PHP necesitará leer este JSON (usando file_get_contents("php://input"))
-                        body: JSON.stringify({ CORREO: correo, CONTRA: contraseña })
+                       body: JSON.stringify({ 
+    CORREO: correo, 
+    CONTRA: contraseña 
+})
+
                     });
 
                     const data = await response.json();
