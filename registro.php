@@ -42,7 +42,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://localhost/sociomatch/api';
+        const BASE_API_URL = 'http://localhost/OR_INTERNET/api';
         // ******************************************************
 
         const registerForm = document.getElementById('registerForm');
@@ -86,7 +86,7 @@
             try {
                 // ******************************************************
                 // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                const response = await fetch(`${BASE_API_URL}/registro.php`, {
+                const response = await fetch(`${BASE_API_URL}/register.php`, {
                 // ******************************************************
                     method: 'POST',
                     body: formData // No Content-Type header necesario para FormData
