@@ -4,8 +4,9 @@ include '../db.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-$usuario1 = $data['usuario_id'] ?? null;
-$usuario2 = $data['ID_USUARIO'] ?? null;
+$usuario1 = $data['ID_USUARIO1'] ?? null;
+$usuario2 = $data['ID_USUARIO2'] ?? null;
+
 
 if (!$usuario1 || !$usuario2) {
     echo json_encode(['success' => false, 'msg' => 'Faltan datos']);

@@ -44,76 +44,56 @@
 
     <div class="container-fluid mt-4">
         <div class="row">
-            <aside class="col-lg-2 d-none d-lg-block sidebar">
-                <h6 class="text-muted">Selecciones</h6>
-                <button class="btn btn-light mb-2">🇲🇽 México</button>
-                <button class="btn btn-light mb-2">🇦🇷 Argentina</button>
-                <button class="btn btn-light mb-2">🇧🇷 Brasil</button>
-                <button class="btn btn-light mb-2">🇪🇸 España</button>
-                <button class="btn btn-light mb-2">🇫🇷 Francia</button>
-                <button class="btn btn-light mb-2">🇩🇪 Alemania</button>
-            </aside>
+              <aside class="col-lg-2 d-none d-lg-block sidebar">
+            <div class="card p-3">
+                <h6 class="fw-bold">Metas Diarias</h6>
+                <ul id="metasList" class="list-unstyled small">
+                    <li>✔️ Predecir 1 partido</li>
+                    <li>⬜ Agregar 1 amigo</li>
+                    <li>⬜ Ganar 20 puntos</li>
+                </ul>
+                <a href="metas.php" class="btn btn-sm btn-outline-success mt-2">Ver más</a>
+            </div>
 
-            <section class="col-lg-7">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="card p-3">
-                            <h6 class="fw-bold">Partidos en directo</h6>
-                            <div class="mt-3">
-                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                    <div>
-                                        <p class="m-0">Brasil vs España</p>
-                                        <small class="text-muted">Mundial • 2025-11-21</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <p class="fw-bold m-0">1 - 1</p>
-                                        <small>72'</small><br>
-                                        <button class="btn btn-sm btn-primary mt-1">Ver juntos</button>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center py-2">
-                                    <div>
-                                        <p class="m-0">Francia vs Alemania</p>
-                                        <small class="text-muted">Mundial • 2025-11-21</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <p class="fw-bold m-0">0 - 0</p>
-                                        <small>20'</small><br>
-                                        <button class="btn btn-sm btn-primary mt-1">Ver juntos</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <hr>
 
-                    <div class="col-md-6">
-                        <div class="card p-3">
-                            <h6 class="fw-bold">Amigos</h6>
+            <div class="card mt-3 p-2">
+                <h6 class="fw-bold">Mis Amigos</h6>
+                <div id="sidebarFriendsList">
+                    <p class="text-muted small">Aún no tienes amigos agregados.</p>
+                </div>
+            </div>
+        </aside>
 
-                            <input type="text" id="searchUser" class="form-control mb-2"
-                                placeholder="Buscar usuario por username">
-
-                            <div id="searchResults" class="mb-2"></div>
-
-                            <div id="friendsList" class="mt-3"></div>
+              <section class="col-lg-7">
+            <div class="row g-3">
+                <!-- 🟢 PARTIDO EN CURSO (API) -->
+                <div class="col-12">
+                    <div class="card p-3 shadow-sm">
+                        <h6 class="fw-bold">Partido en curso</h6>
+                        <div id="partidoEnCurso" class="mt-2">
+                            <em>Cargando partido...</em>
                         </div>
                     </div>
                 </div>
-            </section>
+
+                <!-- 🟢 AMIGOS -->
+                <div class="col-12">
+                    <div class="card p-3">
+                        <h6 class="fw-bold">Amigos</h6>
+                        <input type="text" id="searchUser" class="form-control mb-2"
+                            placeholder="Buscar usuario por username">
+                        <div id="searchResults" class="mb-2"></div>
+                        <div id="friendsList" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
             <aside class="col-lg-3">
-                <div class="card p-3 mb-3">
-                    <h6 class="fw-bold">España</h6>
-                    <div class="alert alert-danger p-2 mt-2">
-                        <strong>PARTIDO EN CURSO</strong><br>
-                        Brasil vs España<br>
-                        1 - 1 • 72'<br>
-                        <button class="btn btn-sm btn-primary mt-1">Ver juntos</button>
-                    </div>
-                </div>
-                <div class="card p-3">
+                     <div class="card p-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold m-0">Chat</h6>
+                        <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
                         <div class="d-flex align-items-center gap-2">
                             <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
                                 <i class="bi bi-camera-video-fill"></i>
@@ -230,14 +210,10 @@
 
             async function renderFriends() {
                 if (!user) return;
-
-                // ******************************************************
-                // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                const res = await fetch(`${BASE_API_URL}/amigos.php?id=${user.id_usuario}`); 
-                // ******************************************************
+                console.log("Usuario guardado:", user);
+              const res = await fetch(`${BASE_API_URL}/amigos.php?id=${user.ID_USUARIO}`);
                 
                 friends = await res.json();
-
                 friendsList.innerHTML = '';
                 friends.forEach(f => {
                     const div = document.createElement('div');
@@ -252,11 +228,36 @@
                         </div>
                     `;
                     friendsList.appendChild(div);
+                  div.querySelector('.btnMessage').addEventListener('click', () => {
+                    openChat(f.Username, f.ID_USUARIO); 
+                });
 
-                    div.querySelector('.btnMessage').addEventListener('click', () => {
-                        openChat(f.Username, f.id_usuario); // ahora enviamos el id
-                    });
 
+                });
+                 renderSidebarFriends();
+            }
+
+            // 🟢 NUEVA función que llena la card lateral
+           function renderSidebarFriends() {
+
+            const sidebarFriends = document.getElementById('sidebarFriendsList');
+            sidebarFriends.innerHTML = '';
+            if (friends.length === 0) {
+                sidebarFriends.innerHTML = `<p class="text-muted small">Aún no tienes amigos agregados.</p>`;
+                return;
+            }
+
+
+            friends.forEach(f => {
+                const div = document.createElement('div');
+                div.classList.add('d-flex', 'align-items-center', 'mb-2');
+                div.innerHTML = `
+                <img src="${f.img_p || 'img/usuario-generico.png'}" 
+                 class="rounded-circle me-2" 
+                 style="width:30px;height:30px;object-fit:cover;">
+                 <span>${f.Username}</span>
+                 `;
+                 sidebarFriends.appendChild(div);
                 });
             }
 
@@ -277,7 +278,7 @@
 
                     users.forEach(u => {
                         // Evitar mostrar al mismo usuario o amigos ya agregados
-                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.id_usuario) return;
+                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.ID_USUARIO) return;
 
                         const div = document.createElement('div');
                         div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
@@ -297,16 +298,20 @@
                                 // ******************************************************
                                 // CAMBIO DE URL: De Render a XAMPP (API PHP)
                                 const res = await fetch(`${BASE_API_URL}/agregar_amigo.php`, {
+                                   
                                 // ******************************************************
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                 body: JSON.stringify({ usuario_id: user.id_usuario, amigo_id: u.ID_USUARIO })
-
-
+                                 body: JSON.stringify({
+                                    ID_USUARIO1: user.ID_USUARIO,   // TU ID guardado
+                                    ID_USUARIO2: u.ID_USUARIO       // ID del amigo encontrado
+                                    })
 
                                 });
                                 const data = await res.json();
                                 console.log('📩 Respuesta al agregar amigo:', data);
+                                 console.log('Voy a mandar:', {ID_USUARIO1: user.ID_USUARIO, ID_USUARIO2: u.ID_USUARIO});
+
                                 if (res.ok) {
                                     alert('Amigo agregado correctamente');
                                     renderFriends();
@@ -328,101 +333,116 @@
             });
 
 
-            function openChat(friendUsername) {
-                chats = JSON.parse(localStorage.getItem('chats')) || {};
-                if (!chats[friendUsername]) chats[friendUsername] = [];
-                chatBox.innerHTML = '';
-                chats[friendUsername].forEach(msg => {
-                    const div = document.createElement('div');
-                    div.className = 'chat-message ' + (msg.sent ? 'sent' : 'received');
-                    div.textContent = msg.text;
-                    chatBox.appendChild(div);
-                });
-                chatBox.scrollTop = chatBox.scrollHeight;
 
-                input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
+            // Llamamos la función cuando cargue la página:
+             document.addEventListener("DOMContentLoaded", loadLiveMatch);
+           function openChat(friendUsername, friendId) {
 
-                sendBtn.onclick = () => {
-                    const text = input.value.trim();
-                    if (!text) return;
-                    chats[friendUsername].push({ text, sent: true });
-                    localStorage.setItem('chats', JSON.stringify(chats));
+            chats = JSON.parse(localStorage.getItem('chats')) || {};
 
-                    const div = document.createElement('div');
-                    div.className = 'chat-message sent';
-                    div.textContent = text;
-                    chatBox.appendChild(div);
-                    input.value = '';
-                    chatBox.scrollTop = chatBox.scrollHeight;
-
-                    setTimeout(() => {
-                        const reply = { text: "¡Genial! 😎", sent: false };
-                        chats[friendUsername].push(reply);
-                        localStorage.setItem('chats', JSON.stringify(chats));
-                        const rDiv = document.createElement('div');
-                        rDiv.className = 'chat-message received';
-                        rDiv.textContent = reply.text;
-                        chatBox.appendChild(rDiv);
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }, 1000 + Math.random() * 2000);
-                };
-            }
-
-            renderFriends();
+            if (!chats[friendUsername]) chats[friendUsername] = [];
+            const chatTitle = document.getElementById('chatTitle');
+            chatTitle.textContent = `Chat con ${friendUsername}`;
+            chatBox.innerHTML = '';
+            chats[friendUsername].forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'chat-message ' + (msg.sent ? 'sent' : 'received');
+            div.textContent = msg.text;
+            chatBox.appendChild(div);
         });
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
+        sendBtn.onclick = () => {
+            const text = input.value.trim();
+            if (!text) return;
+            chats[friendUsername].push({ text, sent: true });
+            localStorage.setItem('chats', JSON.stringify(chats));
+            const div = document.createElement('div');
+            div.className = 'chat-message sent';
+            div.textContent = text;
+            chatBox.appendChild(div);
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+         };
+        }
+            renderFriends();
+
+        });
+
+
+        
     </script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        // ******************************************************
-        // CAMBIO DE URL: De Render a XAMPP (Servidor de Sockets local)
-        const socket = io('http://localhost:3000'); 
-        // ******************************************************
+   
+   <script>
+   document.addEventListener('DOMContentLoaded', () => {
+    const partido = JSON.parse(localStorage.getItem("partidoSeleccionado"));
+    if (partido) {
+        document.getElementById("selectedMatch").textContent = partido.name;
+        document.getElementById("homeTeam").textContent = partido.home;
+        document.getElementById("awayTeam").textContent = partido.away;
+        document.getElementById("selectedMatchId").value = partido.id;
+        document.getElementById("predictionForm").style.display = 'block';
+    }});
 
-        // Simulamos usuarios con URL (?user=1 o ?user=2)
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = parseInt(urlParams.get('user')) || 1;  // por defecto usuario 1
-        const amigoId = userId === 1 ? 2 : 1; // el otro usuario
+    const partidoCard = document.getElementById("partidoEnCurso");
+    let partidos = [];   // Aquí se guardarán todos los partidos
+    let indexPartido = 0; // Para saber en cuál estamos
 
-        console.log(`🟢 Conectado como usuario ${userId}, chateando con ${amigoId}`);
+    async function loadLiveMatch() {
+        try {
+            const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4328");
+            const data = await res.json();
 
-        // Registramos el usuario en el servidor
-        socket.emit('registrarUsuario', userId);
-        // equs
+            partidos = data.events; // Guardamos todos
+            mostrarPartido();
+        } catch (err) {
+            console.error(err);
+            partidoCard.innerHTML = `<em>Error al cargar partido.</em>`;
+        }
+    }
 
-        // Referencias a elementos del chat
-        const input = document.querySelector('.input-group input');
-        const sendBtn = document.querySelector('.input-group button');
-        const chatBox = document.querySelector('.chat-box');
-
-        // Mostrar mensajes en pantalla
-        function mostrarMensaje(texto, enviado) {
-            const div = document.createElement('div');
-            div.className = 'chat-message ' + (enviado ? 'sent' : 'received');
-            div.textContent = texto;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
+    function mostrarPartido() {
+        if (!partidos || partidos.length === 0) {
+            partidoCard.innerHTML = `<em>No hay partidos disponibles.</em>`;
+            return;
         }
 
-        // Recibir mensaje desde el servidor
-        socket.on('recibirMensaje', (msg) => {
-            console.log('📩 Mensaje recibido:', msg);
-            mostrarMensaje(`${msg.de}: ${msg.texto}`, false);
+        const partido = partidos[indexPartido];
+
+        partidoCard.innerHTML = `
+            <div class="alert alert-danger p-2 mt-2 shadow-sm text-center">
+                <strong>${partido.strHomeTeam} vs ${partido.strAwayTeam}</strong><br>
+                ${partido.intHomeScore} - ${partido.intAwayScore} <br>
+                <small>${partido.dateEvent} • ${partido.strTime}</small><br>
+
+                <div class="mt-2 d-flex gap-2 justify-content-center">
+
+                    <button class="btn btn-sm btn-warning" id="btnPredecir">Predecir</button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnSiguiente">Siguiente partido ⏭️</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById("btnSiguiente").addEventListener("click", () => {
+            indexPartido = (indexPartido + 1) % partidos.length;
+            mostrarPartido();
         });
 
-        // Enviar mensaje
-        sendBtn.addEventListener('click', () => {
-            const texto = input.value.trim();
-            if (!texto) return;
-            socket.emit('mensajePrivado', { de: userId, para: amigoId, texto });
-            mostrarMensaje(`Yo: ${texto}`, true);
-            input.value = '';
+        document.getElementById("btnPredecir").addEventListener("click", () => {
+            const matchInfo = {
+                id: partido.idEvent,
+                name: `${partido.strHomeTeam} vs ${partido.strAwayTeam}`,
+                home: partido.strHomeTeam,
+                away: partido.strAwayTeam
+            };
+            localStorage.setItem("partidoSeleccionado", JSON.stringify(matchInfo));
+            window.location.href = "predicciones.php"; 
         });
+    }
 
-        // Enviar con Enter
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendBtn.click();
-        });
-    </script>
+    loadLiveMatch();
+</script>
 
 
 </body>
