@@ -1,56 +1,73 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+// Mostrar errores (solo durante desarrollo)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 
 include '../db.php';
 
-$nombre = $_POST['NOMBRE'] ?? '';
-$correo = $_POST['CORREO'] ?? '';
-$username = $_POST['Username'] ?? '';
-$contra = $_POST['CONTRA'] ?? '';
-$puntos_iniciales = 10;
+$response = ['success' => false, 'message' => ''];
 
-if (!$nombre || !$correo || !$username || !$contra) {
-    http_response_code(400);
-    echo json_encode(['msg' => 'Todos los campos son obligatorios']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $response['message'] = 'Método no permitido.';
+    echo json_encode($response);
     exit;
 }
 
-$contra_hasheada = password_hash($contra, PASSWORD_DEFAULT);
+$data = json_decode(file_get_contents('php://input'), true);
 
-$img_p_base64 = null;
-if (isset($_FILES['img_p']) && $_FILES['img_p']['error'] === UPLOAD_ERR_OK) {
-    $file_content = file_get_contents($_FILES['img_p']['tmp_name']);
-    $img_p_base64 = base64_encode($file_content);
+$nombre = $data['nombre'] ?? null;
+$correo = $data['correo'] ?? null;
+$username = $data['username'] ?? null;
+$password = $data['password'] ?? null;
+
+if (!$nombre || !$correo || !$username || !$password) {
+    $response['message'] = 'Por favor, completa todos los campos.';
+    echo json_encode($response);
+    exit;
 }
 
-$sql = "INSERT INTO USUARIO (NOMBRE, CORREO, CONTRA, Username, puntos, img_p) 
-        VALUES (?, ?, ?, ?, ?, ?)";
+if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+    $response['message'] = 'El formato del correo no es válido.';
+    echo json_encode($response);
+    exit;
+}
 
-$stmt = $conn->prepare($sql);
+if (strlen($password) < 6) {
+    $response['message'] = 'La contraseña debe tener al menos 6 caracteres.';
+    echo json_encode($response);
+    exit;
+}
 
-$stmt->bind_param("ssssis", 
-    $nombre, 
-    $correo, 
-    $contra_hasheada, 
-    $username, 
-    $puntos_iniciales, 
-    $img_p_base64
-);
+//$passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
-if ($stmt->execute()) {
-    echo json_encode(['msg' => 'Registro exitoso']);
+$stmt_check = $conn->prepare("SELECT ID_USUARIO FROM usuario WHERE CORREO = ? OR Username = ?");
+$stmt_check->bind_param("ss", $correo, $username);
+$stmt_check->execute();
+$result = $stmt_check->get_result();
+
+if ($result->num_rows > 0) {
+    $response['message'] = 'Correo o nombre de usuario ya registrados.';
 } else {
-    if ($conn->errno === 1062) {
-        http_response_code(409);
-        echo json_encode(['msg' => 'El correo o nombre de usuario ya está registrado']);
+    $stmt_insert = $conn->prepare(
+        "INSERT INTO usuario (NOMBRE, CORREO, CONTRA, Username, puntos) VALUES (?, ?, ?, ?, 10)"
+    );
+    $stmt_insert->bind_param("ssss", $nombre, $correo, $password, $username);
+
+    if ($stmt_insert->execute()) {
+        $response['success'] = true;
+        $response['message'] = '¡Registro exitoso! Ahora puedes iniciar sesión.';
     } else {
-        http_response_code(500);
-        echo json_encode(['msg' => 'Error: ' . $conn->error]);
+        $response['message'] = 'Error al crear la cuenta. Intenta más tarde.';
     }
+
+    $stmt_insert->close();
 }
 
+$stmt_check->close();
 $conn->close();
+
+echo json_encode($response);
 ?>

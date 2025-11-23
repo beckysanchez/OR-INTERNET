@@ -27,11 +27,8 @@
             <input id="nombre" type="text" class="form-control" placeholder="Nombre completo" required>
             <input id="Username" type="text" class="form-control" placeholder="Nombre de usuario" required>
             <input id="correo" type="email" class="form-control" placeholder="Correo electrónico" required>
-            <input id="contraseña" type="password" class="form-control" placeholder="Contraseña" required>
+            <input id="contrasena" type="password" class="form-control" placeholder="Contraseña" required>
             <input id="confirmar" type="password" class="form-control" placeholder="Confirmar contraseña" required>
-            <input type="file" id="imagen" name="img_p" accept="image/*" onchange="previsualizarImagen()">
-            <img id="preview" style="max-width:150px; margin-top:10px; display:block;">
-
             <button type="submit" class="btn btn-primary">Crear cuenta</button>
         </form>
         <div class="login-link">
@@ -39,78 +36,36 @@
         </div>
     </div>
 
-    <script>
-        // ******************************************************
-        // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://localhost/OR_INTERNET/api';
-        // ******************************************************
+ <script>
+   document.getElementById('registerForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-        const registerForm = document.getElementById('registerForm');
+  const nombre = document.getElementById('nombre').value.trim();
+  const username = document.getElementById('Username').value.trim();
+  const correo = document.getElementById('correo').value.trim();
+  const password = document.getElementById('contrasena').value;
+  const password2 = document.getElementById('confirmar').value;
 
-        function previsualizarImagen() {
-            let input = document.getElementById('imagen');
-            let preview = document.getElementById('preview');
+  if (password !== password2) {
+    alert('Las contraseñas no coinciden.');
+    return;
+  }
 
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.src = '';
-            }
-        }
+  const res = await fetch('api/register.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre, username, correo, password })
+  });
 
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+  const data = await res.json();
 
-            const contraseña = document.getElementById('contraseña').value;
-            const confirmar = document.getElementById('confirmar').value;
-
-            if (contraseña !== confirmar) {
-                alert("Las contraseñas no coinciden");
-                return;
-            }
-
-            // Usamos FormData ya que el registro incluye la subida de un archivo (imagen)
-            const formData = new FormData();
-            formData.append('NOMBRE', document.getElementById('nombre').value);
-            formData.append('CORREO', document.getElementById('correo').value);
-            formData.append('Username', document.getElementById('Username').value);
-            formData.append('CONTRA', contraseña);
-            const imagen = document.getElementById('imagen').files[0];
-            if (imagen) formData.append('img_p', imagen);
-            // Requisito: Creación de usuario mediante correo electrónico [cite: 115]
-
-            try {
-                // ******************************************************
-                // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                const response = await fetch(`${BASE_API_URL}/register.php`, {
-                // ******************************************************
-                    method: 'POST',
-                    body: formData // No Content-Type header necesario para FormData
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert('✅ ' + data.msg);
-                    registerForm.reset();
-                    // Redirigir a iniciosesion.php
-                    window.location.href = 'iniciosesion.php'; 
-                } else {
-                    alert('⚠️ ' + (data.msg || 'Ocurrió un error al registrar el usuario'));
-                }
-
-
-            } catch (error) {
-                console.error('Error de conexión:', error);
-                alert('Hubo un error al conectar con el servidor local. Asegúrate de que XAMPP esté corriendo y el script registro.php exista.');
-            }
-        });
-
-    </script>
+  if (data.success) {
+    alert(data.message);
+    window.location.href = 'iniciosesion.php';
+  } else {
+    alert(data.message);
+  }
+});
+</script>
 </body>
-
 </html>
