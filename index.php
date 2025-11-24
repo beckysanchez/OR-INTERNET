@@ -178,7 +178,7 @@
     // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
     // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
     //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
-    const BASE_API_URL = 'http://192.168.1.120/api'; 
+     const BASE_API_URL = 'http://192.168.1.93/OR-INTERNET/api';
     // ******************************************************
     // variables globales para el chat
     let user = null;
@@ -205,7 +205,7 @@
             btnCerrarSesion.style.display = 'inline-block';
         } else {
             userPoints.textContent = 0;
-            profileImg.src = 'img/usuario-generico.png';
+            profileImg.src = 'img/basico.png';
             btnCerrarSesion.style.display = 'none';
         }
 
@@ -396,7 +396,7 @@
                 div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border-bottom', 'py-2');
                 div.innerHTML = `
                     <div>
-                        <img src="${f.img_p || 'img/usuario-generico.png'}" class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">
+                        <img src="${f.img_p || 'img/basico.png'}" class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">
                         ${f.Username} <small class="text-muted">Amigo</small>
                     </div>
                     <div>
@@ -429,7 +429,7 @@
                 const div = document.createElement('div');
                 div.classList.add('d-flex', 'align-items-center', 'mb-2');
                 div.innerHTML = `
-                    <img src="${f.img_p || 'img/usuario-generico.png'}" 
+                    <img src="${f.img_p || 'img/basico.png'}" 
                         class="rounded-circle me-2" 
                         style="width:30px;height:30px;object-fit:cover;">
                     <span>${f.Username}</span>
@@ -458,7 +458,7 @@
                     div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
                     div.innerHTML = `
                         <div class="d-flex align-items-center">
-                            <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
+                            <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/basico.png'}"
                                 class="rounded-circle me-2"
                                 style="width:30px;height:30px;object-fit:cover;">
                             ${u.Username}
@@ -693,7 +693,7 @@ async function loadProfileImage() {
 
     document.getElementById('profileImg').src = activa
         ? activa.imagen_url
-        : 'img/usuario-generico.png';
+        : 'img/basico.png';
 }
 
     loadProfileImage();
@@ -724,7 +724,7 @@ async function loadProfileImage() {
     // ⚙️ SOCKET.IO (usa IP / dominio actual)
     // =========================================================
     const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
-    //const socket = io("http://192.168.2.193:3000"); 
+    //const socket = io("http://192.168.1.93:3000"); 
 
   socket.on('recibirMensaje', ({ de, texto, archivo_url, archivo_mime, tipo }) => {
     if (de !== targetUserId) {

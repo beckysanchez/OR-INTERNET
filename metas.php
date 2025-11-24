@@ -114,7 +114,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-     const BASE_API_URL = 'http://192.168.1.120/api';
+        const BASE_API_URL = 'http://192.168.1.93/OR-INTERNET/api';
         // ******************************************************
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -199,7 +199,7 @@ async function loadRanking() {
             <tr>
                 <td><strong>${index + 1}</strong></td>
                 <td>
-                    <img src="${user.foto || 'img/usuario-generico.png'}" 
+                    <img src="${user.foto || 'img/basico.png'}" 
                          class="rounded-circle me-2" width="30" height="30">
                     ${user.Username}
                 </td>
@@ -214,23 +214,45 @@ async function loadRanking() {
 
 
 async function loadRecompensas() {
-    const res = await fetch(`${BASE_API_URL}/get_recompensa.php`);
-    const recompensas = await res.json();
+    try {
+        const res = await fetch(`${BASE_API_URL}/get_recompensa.php`);
+        const data = await res.json();
 
-    const contenedor = document.getElementById("recompensasContainer");
-    contenedor.innerHTML = '';
+        console.log('Respuesta de get_recompensa.php:', data);
 
-    recompensas.forEach(r => {
-        contenedor.innerHTML += `
-        <div class="col-6 col-md-4 mb-3">
-          <div class="reward-card">
-            <img src="${r.imagen_url}" alt="${r.nombre}">
-            <h6 class="mt-2">${r.nombre}</h6>
-            <p class="text-muted small">Costo: ${r.costo} pts</p>
-            <button class="btn btn-sm btn-success" onclick="canjear(${r.id})">Canjear</button>
-          </div>
-        </div>`;
-    });
+        // Aseguramos que sea un arreglo
+        const recompensas = Array.isArray(data)
+            ? data
+            : (Array.isArray(data.recompensas) ? data.recompensas : []);
+
+        const contenedor = document.getElementById("recompensasContainer");
+        contenedor.innerHTML = '';
+
+        if (recompensas.length === 0) {
+            contenedor.innerHTML = `<p class="text-muted">No hay recompensas disponibles.</p>`;
+            return;
+        }
+
+        recompensas.forEach(r => {
+            contenedor.innerHTML += `
+                <div class="col-6 col-md-4 mb-3">
+                    <div class="reward-card text-center">
+                        <img src="${r.imagen_url}" alt="${r.nombre}" class="img-fluid rounded">
+                        <h6 class="mt-2">${r.nombre}</h6>
+                        <p class="text-muted small">Costo: ${r.costo} pts</p>
+                        <button class="btn btn-sm btn-success" onclick="canjear(${r.id_recompensa})">
+                            Canjear
+                        </button>
+                        <button class="btn btn-sm btn-primary mt-1" onclick="activarRecompensa(${r.id_recompensa})">
+                            Usar como foto
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando recompensas:", error);
+    }
 }
 
 function canjear(rewardId) {

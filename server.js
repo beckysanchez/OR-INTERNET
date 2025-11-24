@@ -240,7 +240,7 @@ app.get('/grupos/:userId', (req, res) => {
   });
 });
 
-// Mensajes de grupo (por ahora solo texto, pero tabla ya admite archivos)
+// Mensajes de grupo
 app.post('/grupo/:grupoId/mensaje', (req, res) => {
   const { grupoId } = req.params;
   const { emisorId, mensaje, tipo, archivo_url, archivo_mime, archivo_nombre } = req.body;
@@ -321,20 +321,9 @@ io.on('connection', (socket) => {
     usuariosConectados[userId] = socket.id;
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
 
-    // Marcar en la base de datos como online
-    //const sqlOnline = `
-      //INSERT INTO estado_usuario (id_usuario, online)
-      //VALUES (?, 1)
-      //ON DUPLICATE KEY UPDATE online=1, ultima_actualizacion=NOW()
-   // `;
-   // db.query(sqlOnline, [userId], (err) => {
-    //  if (err) console.error('❌ Error al actualizar estado online:', err);
-   // });
-
-    // Notificar a todos los demás que este usuario está online
-    //socket.broadcast.emit('usuarioOnline', { id_usuario: userId });
- // });
-
+    // Aquí podrías actualizar estado online en BD y emitir eventos
+    // ...
+  });
 
   // ===========================================
   // 2) WEBRTC SEÑALIZACIÓN
@@ -354,7 +343,6 @@ io.on('connection', (socket) => {
     if (destino) io.to(destino).emit('ice-candidate', data);
   });
 
-
   // ===========================================
   // 3) CHAT PRIVADO
   // ===========================================
@@ -366,7 +354,6 @@ io.on('connection', (socket) => {
       de, para, texto, archivo_url, archivo_mime, archivo_nombre, tipo
     });
 
-    // --- Buscar o crear conversación ---
     const sqlConv = `
       SELECT ID_CONVERSACION FROM CONVERSACION 
       WHERE (ID_USUARIO1=? AND ID_USUARIO2=?)
@@ -418,7 +405,6 @@ io.on('connection', (socket) => {
     }
   });
 
-
   // ===========================================
   // 4) CHAT GRUPAL
   // ===========================================
@@ -440,7 +426,6 @@ io.on('connection', (socket) => {
     console.log(`👥 Socket ${socket.id} unido a ${nuevaSala}`);
   });
 
-
   // --- Nuevo mensaje de grupo ---
   socket.on('mensajeGrupoNuevo', (msg) => {
     const groupId = msg.ID_GRUPO;
@@ -453,33 +438,22 @@ io.on('connection', (socket) => {
     socket.to(sala).emit('recibirMensajeGrupo', msg);
   });
 
-
   // ===========================================
   // 5) DESCONECTAR USUARIO
   // ===========================================
-socket.on('disconnect', () => {
+  socket.on('disconnect', () => {
     for (const [id, sid] of Object.entries(usuariosConectados)) {
       if (sid === socket.id) {
         delete usuariosConectados[id];
 
-        // Marcar en la base de datos como offline
-       // db.query(
-         // `UPDATE estado_usuario SET online=0, ultima_actualizacion=NOW() WHERE id_usuario=?`,
-        //  [id],
-        //  (err) => {
-       //     if (err) console.error('❌ Error al actualizar estado offline:', err);
-       //   }
-       // );
-
         console.log(`🚫 Usuario ${id} desconectado`);
 
-        // Notificar a todos los demás que este usuario está offline
-        //socket.broadcast.emit('usuarioOffline', { id_usuario: id });
+        // Aquí podrías actualizar estado offline en BD y emitir evento
+        // ...
       }
     }
   });
 });
-
 
 // ===========================================
 // 6) ARRANCAR SERVIDOR
