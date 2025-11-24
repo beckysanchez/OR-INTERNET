@@ -30,7 +30,8 @@
             // ******************************************************
             // CONSTANTE DE BASE URL LOCAL
             // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-            const BASE_API_URL = 'http://192.168.1.120/api';
+           
+
             // ******************************************************
 
             document.addEventListener("DOMContentLoaded", () => {
@@ -52,7 +53,8 @@
                 try {
                     // ******************************************************
                     // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                    const response = await fetch(`${BASE_API_URL}/login.php`, {
+                   const response = await fetch(`${BASE_API_URL}/login.php`, {
+
                     // ******************************************************
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

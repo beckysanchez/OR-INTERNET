@@ -115,7 +115,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://192.168.1.120/api';
+     const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
         // ******************************************************
         
         const matchItems = document.querySelectorAll('.match-item');
