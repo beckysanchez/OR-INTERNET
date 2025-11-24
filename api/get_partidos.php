@@ -2,8 +2,7 @@
 include '../db.php';
 header('Content-Type: application/json');
 
-$sql = "SELECT id_partido, equipo_local, equipo_visitante, fecha 
-        FROM partidos";
+$sql = "SELECT id_partido, equipo_local, equipo_visitante, fecha FROM partidos";
 $result = $conn->query($sql);
 
 $partidos = [];
