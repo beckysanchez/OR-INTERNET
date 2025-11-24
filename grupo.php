@@ -11,150 +11,235 @@
 </head>
 
 <body>
-
     <header>
         <div class="container d-flex justify-content-between align-items-center py-3">
             <div class="d-flex align-items-center gap-4">
                 <h4 class="text-primary fw-bold m-0">⚽ SocioMatch</h4>
                 <nav class="d-none d-md-flex gap-3">
                     <a href="index.php" class="btn btn-link text-decoration-none">Inicio</a>
-                    <a href="grupo.php" class="btn btn-link text-decoration-none active">Crear grupo</a>
+                    <a href="grupo.php" class="btn btn-link text-decoration-none active">Grupos</a>
                     <a href="metas.php" class="btn btn-link text-decoration-none">Metas Diarias</a>
                     <a href="predicciones.php" class="btn btn-link text-decoration-none">Predicciones</a>
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="points-badge">
-                    ⭐ <span id="userPoints">120</span>
+                    ⭐ <span id="userPoints">0</span>
                 </div>
                 <img src="img/image1.png" alt="perfil" class="rounded-circle"
                     style="width:40px; height:40px; object-fit:cover;">
-
             </div>
         </div>
     </header>
 
-    <h2>Crear grupo</h2>
+    <main class="container-fluid mt-3 chat-layout">
+        <div class="row h-100">
+            <!-- 🔹 Columna izquierda: crear grupo + lista de grupos -->
+            <aside class="col-12 col-md-4 col-lg-3 chat-sidebar">
+                <!-- Crear grupo -->
+                <div class="card mb-2">
+                    <div class="card-header py-2">
+                        <strong>Crear grupo (3 personas)</strong>
+                    </div>
+                    <div class="card-body">
+                        <div id="friendsList">
+                            <p class="text-muted small">Cargando amigos...</p>
+                        </div>
 
-    <div class="friends-list">
-        <div class="friend-item" data-id="101">
-            <span>Ana</span>
-            <div class="status">
-                <span class="online">🟢 Conectado</span>
-                <input type="checkbox" class="form-check-input friend-checkbox" value="101">
-            </div>
-        </div>
-        <div class="friend-item" data-id="102">
-            <span>Diego</span>
-            <div class="status">
-                <span class="offline">⚪ Desconectado</span>
-                <input type="checkbox" class="form-check-input friend-checkbox" value="102">
-            </div>
-        </div>
-        <div class="friend-item" data-id="103">
-            <span>Luis</span>
-            <div class="status">
-                <span class="online">🟢 Conectado</span>
-                <input type="checkbox" class="form-check-input friend-checkbox" value="103">
-            </div>
-        </div>
-        <div class="friend-item" data-id="104">
-            <span>María</span>
-            <div class="status">
-                <span class="offline">⚪ Desconectado</span>
-                <input type="checkbox" class="form-check-input friend-checkbox" value="104">
-            </div>
-        </div>
-    </div>
+                        <div class="mt-3">
+                            <label for="chatTitle" class="form-label mb-1">Nombre del grupo</label>
+                            <input type="text" id="chatTitle" class="form-control form-control-sm"
+                                placeholder="Escribe el nombre del grupo">
+                        </div>
 
-    <div class="form-group">
-        <label for="chatTitle" class="form-label">Título del Chat</label>
-        <input type="text" id="chatTitle" class="form-control" placeholder="Escribe el nombre del grupo">
-    </div>
+                        <button class="btn btn-primary btn-sm w-100 mt-3" id="createGroupBtn">
+                            Crear grupo
+                        </button>
+                    </div>
+                </div>
 
-    <button class="btn btn-primary btn-create" id="createGroupBtn">Crear grupo</button>
+                <!-- Lista de grupos -->
+                <div class="card flex-grow-1">
+                    <div class="card-header py-2">
+                        <strong>Mis grupos</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="groupsContainer">
+                            <p class="text-muted small p-2 m-0">No hay grupos creados aún.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
 
-    <div class="groups-list">
-        <h4>grupos Creados</h4>
-        <div id="groupsContainer">
-            <p class="text-muted">No hay grupos creados aún.</p>
+            <!-- 🔹 Columna derecha: chat del grupo -->
+            <section class="col-12 col-md-8 col-lg-9 chat-main">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <div class="chat-header-title" id="currentGroupName">
+                                Selecciona un grupo
+                            </div>
+                            <div class="chat-header-subtitle text-muted" id="currentGroupMembers">
+                                No hay grupo seleccionado
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="groupMessages" class="messages-container">
+                        <p class="text-muted text-center mt-5">
+                            Elige un grupo de la izquierda para empezar a chatear.
+                        </p>
+                    </div>
+
+                    <div class="card-footer">
+                        <form id="groupMessageForm" class="d-flex gap-2">
+                            <input type="text" id="groupMessageInput" class="form-control"
+                                placeholder="Escribe un mensaje..." autocomplete="off">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
         </div>
-    </div>
+    </main>
 
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- ========= JS ========= -->
     <script>
         // ******************************************************
-        // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://shadowgraphic-joanna-unremovably.ngrok-free.dev/api';
+        // CONSTANTE DE BASE URL LOCAL (igual que en index.php)
+        // Conexión con Socket.IO (mismo host, puerto 3000)
+const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
+
+const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api';
         // ******************************************************
-        
+
         const createGroupBtn = document.getElementById('createGroupBtn');
         const groupsContainer = document.getElementById('groupsContainer');
+        const friendsListDiv = document.getElementById('friendsList');
+        const groupMessagesDiv = document.getElementById('groupMessages');
+        const groupMessageForm = document.getElementById('groupMessageForm');
+        const groupMessageInput = document.getElementById('groupMessageInput');
+        const currentGroupNameEl = document.getElementById('currentGroupName');
+        const currentGroupMembersEl = document.getElementById('currentGroupMembers');
 
         const user = JSON.parse(localStorage.getItem('usuario'));
+        let currentGroupId = null;
 
-        // 🚀 Al cargar la página, obtener los grupos del usuario
+        // 🚀 Al cargar la página
         document.addEventListener('DOMContentLoaded', async () => {
-            if (!user) {
-                alert('Debes iniciar sesión para ver tus grupos.');
-                window.location.href = 'iniciosesion.php'; // Redirigir si no está logueado
-                return;
-            }
-            // Actualizar header con datos del usuario
-            document.getElementById('userPoints').textContent = user.puntos || 0;
-            // Lógica para actualizar la imagen de perfil si está disponible en 'user'
-            
-            await cargarGruposUsuario(user.id_usuario); // Asumiendo que el ID del usuario logueado es 'id_usuario'
-        });
+    if (!user) {
+        alert('Debes iniciar sesión para ver tus grupos.');
+        window.location.href = 'iniciosesion.php';
+        return;
+    }
 
-        // 📦 Función para cargar grupos del usuario desde la BD
-        async function cargarGruposUsuario(userId) {
-            groupsContainer.innerHTML = '<p class="text-muted">Cargando grupos...</p>';
+    const userId = user.ID_USUARIO || user.id_usuario;
+    document.getElementById('userPoints').textContent = user.puntos || 0;
+
+    // Registrar usuario en socket (ya lo usas en index.php)
+    socket.on('connect', () => {
+        console.log('🟢 Conectado a Socket.IO (grupos):', socket.id);
+        socket.emit('registrarUsuario', userId);
+    });
+
+    await cargarAmigosUsuario(userId);
+    await cargarGruposUsuario(userId);
+});
+
+
+        // 📦 Cargar amigos
+        async function cargarAmigosUsuario(userId) {
+            friendsListDiv.innerHTML = '<p class="text-muted small">Cargando amigos...</p>';
             try {
-                // ******************************************************
-                // CAMBIO DE URL: De Render a XAMPP (API PHP)
+                const res = await fetch(`${BASE_API_URL}/amigos.php?id=${userId}`);
+                const amigos = await res.json();
+
+                if (!amigos || amigos.length === 0) {
+                    friendsListDiv.innerHTML = '<p class="text-muted small">Aún no tienes amigos agregados.</p>';
+                    return;
+                }
+
+                friendsListDiv.innerHTML = '';
+                amigos.forEach(a => {
+                    const div = document.createElement('div');
+                    div.classList.add('friend-item');
+                    div.dataset.id = a.ID_USUARIO;
+
+                    div.innerHTML = `
+                        <span>${a.Username}</span>
+                        <div class="status">
+                            <span class="offline">⚪</span>
+                            <input type="checkbox" 
+                                   class="form-check-input friend-checkbox" 
+                                   value="${a.ID_USUARIO}">
+                        </div>
+                    `;
+                    friendsListDiv.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error('❌ Error al cargar amigos:', err);
+                friendsListDiv.innerHTML = '<p class="text-danger small">Error al conectar con el servidor.</p>';
+            }
+        }
+
+        // 📦 Cargar grupos
+        async function cargarGruposUsuario(userId) {
+            groupsContainer.innerHTML = '<p class="text-muted small p-2 m-0">Cargando grupos...</p>';
+            try {
                 const res = await fetch(`${BASE_API_URL}/grupos.php?user_id=${userId}`);
-                // ******************************************************
                 const grupos = await res.json();
 
                 if (!grupos || grupos.length === 0) {
-                    groupsContainer.innerHTML = '<p class="text-muted">No hay grupos creados aún.</p>';
+                    groupsContainer.innerHTML = '<p class="text-muted small p-2 m-0">No hay grupos creados aún.</p>';
                     return;
                 }
 
                 groupsContainer.innerHTML = '';
                 grupos.forEach(g => {
                     const div = document.createElement('div');
-                    div.classList.add('group-item', 'border', 'rounded', 'p-2', 'mb-2');
+                    div.classList.add('group-item', 'border-bottom', 'px-3', 'py-2');
+
                     div.innerHTML = `
-           <strong>${g.NOMBRE}</strong><br>
-           <small>Creado el ${new Date(g.FECHA_CREACION).toLocaleString()}</small><br>
-           <button class="btn btn-sm btn-outline-primary mt-2" onclick="abrirChatGrupo(${g.ID_GRUPO}, '${g.NOMBRE}')">
-             Abrir chat
-           </button>
-         `;
+                        <div class="fw-semibold">${g.NOMBRE}</div>
+                        <div class="text-muted small">Integrantes: ${g.miembros_nombres || 'N/D'}</div>
+                    `;
+
+                    div.addEventListener('click', () => {
+                        document.querySelectorAll('.group-item').forEach(el => el.classList.remove('active'));
+                        div.classList.add('active');
+                        abrirChatGrupo(g.ID_GRUPO, g.NOMBRE, g.miembros_nombres || '');
+                    });
+
                     groupsContainer.appendChild(div);
                 });
+
             } catch (err) {
                 console.error('❌ Error al cargar grupos:', err);
-                groupsContainer.innerHTML = '<p class="text-danger">Error al conectar con el servidor.</p>';
+                groupsContainer.innerHTML = '<p class="text-danger small p-2 m-0">Error al conectar con el servidor.</p>';
             }
         }
 
-        // 📤 Crear nuevo grupo
+        // 📤 Crear grupo (exactamente 3 personas)
         createGroupBtn.addEventListener('click', async () => {
             const title = document.getElementById('chatTitle').value.trim();
-            // Obtener los IDs de los amigos seleccionados (asumiendo que los value ahora son IDs)
-            const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox:checked')).map(cb => cb.value);
+            const userId = user.ID_USUARIO || user.id_usuario;
 
-            if (!user) {
+            const selectedFriends = Array
+                .from(document.querySelectorAll('.friend-checkbox:checked'))
+                .map(cb => Number(cb.value));
+
+            if (!userId) {
                 alert("Debes iniciar sesión para crear un grupo.");
                 return;
             }
 
-            // Según la rúbrica, los chats grupales deben tener un mínimo de 3 integrantes (el creador + 2 amigos).
-            // Ya que el creador es automáticamente un miembro, necesitamos 2 amigos seleccionados.
-            if (selectedFriends.length < 2) {
-                alert("Debes seleccionar al menos 2 amigos para formar un grupo de 3 integrantes o más.");
+            if (selectedFriends.length !== 2) {
+                alert("Debes seleccionar exactamente 2 amigos (grupo de 3 personas: tú + 2 amigos).");
                 return;
             }
 
@@ -163,22 +248,15 @@
                 return;
             }
 
-
-            // Los miembros deben incluir al usuario actual (creador) y los amigos seleccionados.
-            // Los IDs de los miembros deben ser numéricos (simulados en el HTML estático con value="ID").
-            const miembrosIds = [user.id_usuario, ...selectedFriends.map(Number)];
-
+            const miembrosIds = [userId, ...selectedFriends];
 
             try {
-                // ******************************************************
-                // CAMBIO DE URL: De Render a XAMPP (API PHP)
                 const res = await fetch(`${BASE_API_URL}/crear-grupo.php`, {
-                // ******************************************************
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         nombre: title,
-                        creador_id: user.id_usuario, 
+                        creador_id: userId,
                         miembros_ids: miembrosIds
                     })
                 });
@@ -186,7 +264,10 @@
                 const data = await res.json();
                 if (res.ok) {
                     alert('✅ Grupo creado correctamente');
-                    await cargarGruposUsuario(user.id_usuario);
+                    await cargarGruposUsuario(userId);
+                    document.getElementById('chatTitle').value = '';
+                    document.querySelectorAll('.friend-checkbox:checked')
+                        .forEach(cb => cb.checked = false);
                 } else {
                     alert('⚠️ ' + (data.msg || 'Error al crear grupo'));
                 }
@@ -197,12 +278,139 @@
             }
         });
 
-        // 💬 Abrir chat del grupo (simple por ahora)
-        function abrirChatGrupo(idGrupo, nombreGrupo) {
-            alert(`Abrir chat del grupo "${nombreGrupo}" (ID ${idGrupo})`);
-            // Implementación futura: conectar con socket.io para el chat grupal
+        // 💬 Abrir chat de grupo
+        async function abrirChatGrupo(idGrupo, nombreGrupo, miembrosTexto) {
+    currentGroupId = idGrupo;
+    currentGroupNameEl.textContent = nombreGrupo;
+    currentGroupMembersEl.textContent = miembrosTexto || 'Integrantes no disponibles';
+
+    // 🔵 Unirse a la sala Socket.IO de este grupo
+    socket.emit('joinGrupo', { ID_GRUPO: idGrupo });
+
+    groupMessagesDiv.innerHTML = '<p class="text-muted small text-center mt-3">Cargando mensajes...</p>';
+
+    try {
+        const res = await fetch(`${BASE_API_URL}/mensajes_grupo.php?id_grupo=${idGrupo}`);
+        const mensajes = await res.json();
+
+        renderMensajesGrupo(mensajes);
+    } catch (err) {
+        console.error('❌ Error al cargar mensajes de grupo:', err);
+        groupMessagesDiv.innerHTML = '<p class="text-danger small text-center mt-3">Error al cargar mensajes.</p>';
+    }
+}
+
+
+        function renderMensajesGrupo(mensajes) {
+            groupMessagesDiv.innerHTML = '';
+            if (!mensajes || mensajes.length === 0) {
+                groupMessagesDiv.innerHTML = '<p class="text-muted small text-center mt-3">No hay mensajes en este grupo aún.</p>';
+                return;
+            }
+
+            const myId = user.ID_USUARIO || user.id_usuario;
+
+            mensajes.forEach(m => {
+                const isMine = Number(m.ID_EMISOR) === Number(myId);
+                const bubble = document.createElement('div');
+                bubble.classList.add('message-bubble', isMine ? 'message-mine' : 'message-other');
+
+                bubble.innerHTML = `
+                    <div class="message-author">${m.autor || (isMine ? 'Tú' : 'Usuario')}</div>
+                    <div>${m.MENSAJE}</div>
+                    <div class="message-time">${m.FECHA_ENVIO}</div>
+                `;
+
+                groupMessagesDiv.appendChild(bubble);
+            });
+
+            groupMessagesDiv.scrollTop = groupMessagesDiv.scrollHeight;
         }
+
+        // ✉️ Enviar mensaje al grupo
+      groupMessageForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const texto = groupMessageInput.value.trim();
+    if (!texto) return;
+    if (!currentGroupId) {
+        alert("Selecciona un grupo primero.");
+        return;
+    }
+
+    const myId = user.ID_USUARIO || user.id_usuario;
+
+    // 1️⃣ Pintar al instante en MI pantalla
+    const ahora = new Date();
+    const horaLocal = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const bubble = document.createElement('div');
+    bubble.classList.add('message-bubble', 'message-mine');
+    bubble.innerHTML = `
+        <div class="message-author">Tú</div>
+        <div>${texto}</div>
+        <div class="message-time">${horaLocal}</div>
+    `;
+    groupMessagesDiv.appendChild(bubble);
+    groupMessagesDiv.scrollTop = groupMessagesDiv.scrollHeight;
+    groupMessageInput.value = '';
+
+    // 2️⃣ Guardar en la BD (PHP)
+    try {
+        const res = await fetch(`${BASE_API_URL}/enviar_mensaje_grupo.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_grupo: currentGroupId,
+                id_emisor: myId,
+                mensaje: texto
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            console.error('❌ Error en enviar_mensaje_grupo.php', data);
+            return;
+        }
+
+        // 3️⃣ Avisar a los otros dispositivos por Socket.IO
+        socket.emit('mensajeGrupoNuevo', {
+            ID_GRUPO: currentGroupId,
+            ID_EMISOR: myId,
+            MENSAJE: texto,
+            autor: user.Username,
+            FECHA_ENVIO: horaLocal
+        });
+
+    } catch (err) {
+        console.error('❌ Error enviando mensaje:', err);
+    }
+});
+
+socket.on('recibirMensajeGrupo', (m) => {
+    if (!currentGroupId) return;
+    if (Number(m.ID_GRUPO) !== Number(currentGroupId)) return;
+
+    const myId = user.ID_USUARIO || user.id_usuario;
+    const isMine = Number(m.ID_EMISOR) === Number(myId);
+
+    // evitar duplicar mis propios mensajes
+    if (isMine) return;
+
+    const bubble = document.createElement('div');
+    bubble.classList.add('message-bubble', 'message-other');
+    bubble.innerHTML = `
+        <div class="message-author">${m.autor || 'Usuario'}</div>
+        <div>${m.MENSAJE}</div>
+        <div class="message-time">${m.FECHA_ENVIO || ''}</div>
+    `;
+    groupMessagesDiv.appendChild(bubble);
+    groupMessagesDiv.scrollTop = groupMessagesDiv.scrollHeight;
+});
+
+
     </script>
+    
 
 </body>
 

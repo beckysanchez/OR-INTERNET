@@ -92,21 +92,33 @@
 
           <aside class="col-lg-3">
     <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
-            <div class="d-flex align-items-center gap-2">
-                <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
-                    <i class="bi bi-camera-video-fill"></i>
-                </button>
-                <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
-                    <i class="bi bi-plus-lg"></i>
-                </button>
-            </div>
-        </div>
-        <div class="chat-box mb-2"></div>
-        <div class="input-group">
+       <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
+    <div class="d-flex align-items-center gap-2">
+        <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
+            <i class="bi bi-camera-video-fill"></i>
+        </button>
+        <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 🔐 SWITCH DE CIFRADO -->
+<div class="d-flex justify-content-end mb-2">
+    <div class="form-check form-switch small">
+        <input class="form-check-input" type="checkbox" id="toggleEncrypt">
+        <label class="form-check-label" for="toggleEncrypt">Cifrado</label>
+    </div>
+</div>
+<!-- 🔐 FIN SWITCH -->
+
+<div class="chat-box mb-2"></div>
+
+<div class="input-group">
     <button class="btn btn-outline-secondary" id="btnAdjuntar" type="button">
         <i class="bi bi-paperclip"></i>
+
     </button>
 
     <!-- Input real de archivos (oculto) -->
@@ -185,6 +197,9 @@
         const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
+        
+
+
         if (user) {
             userPoints.textContent = user.puntos || 0;
             profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
@@ -231,6 +246,16 @@
         const attachBtn = document.getElementById('btnAdjuntar');
         const fileInput = document.getElementById('fileInput');
 
+        let encryptionEnabled = false; // por defecto apagado
+
+    const encryptSwitch = document.getElementById('toggleEncrypt');
+    if (encryptSwitch) {
+        encryptSwitch.addEventListener('change', () => {
+            encryptionEnabled = encryptSwitch.checked;
+            console.log('🔐 Cifrado activado?', encryptionEnabled);
+        });
+    }
+
         let friends = [];
         let chats = {};
 
@@ -274,6 +299,32 @@
             if (mime.startsWith('audio/')) return 'audio';
             return 'archivo';
         }
+            // ========= CIFRADO SENCILLO (XOR + Base64) =========
+            const ENC_KEY = 'mi_clave_super_secreta'; // puedes cambiarla
+
+            window.encryptText = function (plain) {
+                if (!plain) return plain;
+                let xored = '';
+                for (let i = 0; i < plain.length; i++) {
+                    const k = ENC_KEY.charCodeAt(i % ENC_KEY.length);
+                    xored += String.fromCharCode(plain.charCodeAt(i) ^ k);
+                }
+                // Guardamos con prefijo para distinguir en la BD
+                return 'ENC:' + btoa(xored);
+            };
+
+            window.decryptText = function (stored) {
+                if (!stored || !stored.startsWith('ENC:')) return stored; // mensaje sin cifrar
+                const base = stored.slice(4); // quitar "ENC:"
+                const xored = atob(base);
+                let plain = '';
+                for (let i = 0; i < xored.length; i++) {
+                    const k = ENC_KEY.charCodeAt(i % ENC_KEY.length);
+                    plain += String.fromCharCode(xored.charCodeAt(i) ^ k);
+                }
+                return plain;
+            };
+
 
         // ========= BOTÓN DE ADJUNTAR ARCHIVO =========
         if (attachBtn && fileInput) {
@@ -505,35 +556,42 @@
                 console.log("Historial:", mensajes);
 
                 mensajes.forEach(m => {
-                    const emisorId = m.ID_EMISOR ?? m.id_emisor;
-                    const esMio = emisorId == user.ID_USUARIO;
+                const emisorId = m.ID_EMISOR ?? m.id_emisor;
+                const esMio = emisorId == user.ID_USUARIO;
 
-                    if (m.ARCHIVO_URL) {
-                        addFileMessageToUI(m.ARCHIVO_URL, m.ARCHIVO_MIME, esMio);
-                    }
-                    if (m.MENSAJE) {
-                        addMessageToUI(m.MENSAJE, esMio);
-                    }
-                });
+                if (m.ARCHIVO_URL) {
+                    addFileMessageToUI(m.ARCHIVO_URL, m.ARCHIVO_MIME, esMio);
+                }
+                if (m.MENSAJE) {
+                    const textoPlano = decryptText(m.MENSAJE); // si no está cifrado, se queda igual
+                    addMessageToUI(textoPlano, esMio);
+                }
+            });
 
+
+                
                 // 3️⃣ Enviar mensaje: mostrar + enviar solo por socket
                 sendBtn.onclick = () => {
-                    const text = input.value.trim();
+                    let text = input.value.trim();
                     if (!text) return;
 
-                    console.log("Enviando mensaje:", text);
+                    console.log("Enviando mensaje (texto plano):", text);
 
-                    // Mostrar al instante en la UI
+                    // Mostrar SIEMPRE texto normal en mi pantalla
                     addMessageToUI(text, true);
                     input.value = '';
+
+                    // Si el cifrado está activo, ciframos lo que se manda al servidor
+                    const textoParaEnviar = encryptionEnabled ? encryptText(text) : text;
 
                     // Enviar en tiempo real por socket (Node se encarga de guardar en BD)
                     socket.emit("mensajePrivado", {
                         de: user.ID_USUARIO,
                         para: friendId,
-                        texto: text
+                        texto: textoParaEnviar
                     });
                 };
+
 
             } catch (err) {
                 console.error("❌ Error en openChat:", err);
@@ -659,7 +717,7 @@
     const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
     //const socket = io("http://192.168.2.193:3000"); 
 
-   socket.on('recibirMensaje', ({ de, texto, archivo_url, archivo_mime, tipo }) => {
+  socket.on('recibirMensaje', ({ de, texto, archivo_url, archivo_mime, tipo }) => {
     if (de !== targetUserId) {
         console.log('Mensaje de otro chat:', { de, texto, archivo_url });
         return;
@@ -670,9 +728,11 @@
     }
 
     if (texto) {
-        addMessageToUI(texto, false);
+        const textoPlano = window.decryptText(texto); // soporta cifrado y no cifrado
+        addMessageToUI(textoPlano, false);
     }
 });
+
 
 
     // =========================================================

@@ -314,134 +314,136 @@ const usuariosConectados = {}; // { userId: socketId }
 io.on('connection', (socket) => {
   console.log('🟢 Usuario conectado:', socket.id);
 
-  // Registrar usuario en el "mapa" de sockets
+  // ===========================================
+  // 1) REGISTRO DE USUARIO
+  // ===========================================
   socket.on('registrarUsuario', (userId) => {
     usuariosConectados[userId] = socket.id;
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
   });
 
-  // ---------- WebRTC: Oferta ----------
+
+  // ===========================================
+  // 2) WEBRTC SEÑALIZACIÓN
+  // ===========================================
   socket.on('offer', (data) => {
-    // data: { to, from, fromName, sdp }
     const destino = usuariosConectados[data.to];
-    if (destino) {
-      io.to(destino).emit('offer', { 
-        from: data.from, 
-        fromName: data.fromName, 
-        sdp: data.sdp 
-      });
-    }
+    if (destino) io.to(destino).emit('offer', data);
   });
 
-  // ---------- WebRTC: Respuesta ----------
   socket.on('answer', (data) => {
-    // data: { to, from, sdp }
     const destino = usuariosConectados[data.to];
-    if (destino) {
-      io.to(destino).emit('answer', { 
-        from: data.from, 
-        sdp: data.sdp 
-      });
-    }
+    if (destino) io.to(destino).emit('answer', data);
   });
 
-  // ---------- WebRTC: ICE Candidates ----------
   socket.on('ice-candidate', (data) => {
-    // data: { to, from, candidate }
     const destino = usuariosConectados[data.to];
-    if (destino) {
-      io.to(destino).emit('ice-candidate', { 
-        from: data.from, 
-        candidate: data.candidate 
-      });
-    }
+    if (destino) io.to(destino).emit('ice-candidate', data);
   });
 
- // ---------- Chat privado ----------
-socket.on('mensajePrivado', ({ 
-  de, 
-  para, 
-  texto, 
-  archivo_url, 
-  archivo_mime, 
-  archivo_nombre, 
-  tipo 
-}) => {
-  console.log(`📨 Mensaje de ${de} para ${para}`, { texto, archivo_url });
 
-  // Buscar o crear conversación
-  const sqlConversacion = `
-    SELECT ID_CONVERSACION FROM CONVERSACION 
-    WHERE (ID_USUARIO1=? AND ID_USUARIO2=?) 
-       OR (ID_USUARIO1=? AND ID_USUARIO2=?)
-  `;
+  // ===========================================
+  // 3) CHAT PRIVADO
+  // ===========================================
+  socket.on('mensajePrivado', ({ 
+    de, para, texto, archivo_url, archivo_mime, archivo_nombre, tipo 
+  }) => {
 
-  db.query(sqlConversacion, [de, para, para, de], (err, result) => {
-    if (err) {
-      console.error('❌ Error consultando conversación:', err);
-      return;
-    }
+    console.log('➡️ mensajePrivado recibido:', {
+      de, para, texto, archivo_url, archivo_mime, archivo_nombre, tipo
+    });
 
-    if (result.length > 0) {
-      guardarMensaje(result[0].ID_CONVERSACION);
-    } else {
-      const sqlNueva = `
-        INSERT INTO CONVERSACION (ID_USUARIO1, ID_USUARIO2) 
-        VALUES (?, ?)
-      `;
-      db.query(sqlNueva, [de, para], (err2, result2) => {
-        if (err2) {
-          console.error('❌ Error creando conversación:', err2);
-          return;
-        }
-        guardarMensaje(result2.insertId);
-      });
-    }
-  });
-
-  function guardarMensaje(ID_CONVERSACION) {
-    const sqlMensaje = `
-      INSERT INTO MENSAJE 
-      (ID_CONVERSACION, ID_EMISOR, MENSAJE, TIPO, ARCHIVO_URL, ARCHIVO_MIME, ARCHIVO_NOMBRE_ORIGINAL)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+    // --- Buscar o crear conversación ---
+    const sqlConv = `
+      SELECT ID_CONVERSACION FROM CONVERSACION 
+      WHERE (ID_USUARIO1=? AND ID_USUARIO2=?)
+         OR (ID_USUARIO1=? AND ID_USUARIO2=?)
     `;
 
-    db.query(
-      sqlMensaje,
-      [
+    db.query(sqlConv, [de, para, para, de], (err, result) => {
+      if (err) return console.error('❌ Error consultando conversación:', err);
+
+      if (result.length > 0) {
+        guardarMensaje(result[0].ID_CONVERSACION);
+      } else {
+        const sqlNueva = `
+          INSERT INTO CONVERSACION (ID_USUARIO1, ID_USUARIO2)
+          VALUES (?, ?)
+        `;
+        db.query(sqlNueva, [de, para], (err2, result2) => {
+          if (err2) return console.error('❌ Error creando conversación:', err2);
+          guardarMensaje(result2.insertId);
+        });
+      }
+    });
+
+    function guardarMensaje(ID_CONVERSACION) {
+      const sqlMensaje = `
+        INSERT INTO MENSAJE 
+        (ID_CONVERSACION, ID_EMISOR, MENSAJE, TIPO, ARCHIVO_URL, ARCHIVO_MIME, ARCHIVO_NOMBRE_ORIGINAL)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(sqlMensaje, [
         ID_CONVERSACION,
         de,
-        texto || null,                // MENSAJE puede ser null si es solo archivo
-        tipo || 'texto',              // por defecto 'texto'
+        texto || null,
+        tipo || 'texto',
         archivo_url || null,
         archivo_mime || null,
-        archivo_nombre || null,
-      ],
-      (err3) => {
-        if (err3) {
-          console.error('❌ Error guardando mensaje:', err3);
-          return;
-        }
+        archivo_nombre || null
+      ], (err3) => {
+        if (err3) return console.error('❌ Error guardando mensaje:', err3);
 
-        // Enviar al destinatario si está conectado
         const destino = usuariosConectados[para];
         if (destino) {
-          io.to(destino).emit('recibirMensaje', { 
-            de,
-            texto: texto || '',
-            archivo_url: archivo_url || null,
-            archivo_mime: archivo_mime || null,
-            archivo_nombre: archivo_nombre || null,
-            tipo: tipo || 'texto'
+          io.to(destino).emit('recibirMensaje', {
+            de, texto, archivo_url, archivo_mime, archivo_nombre, tipo
           });
         }
-      }
-    );
-  }
-});
+      });
+    }
+  });
 
 
-  // ---------- Desconexión ----------
+  // ===========================================
+  // 4) CHAT GRUPAL
+  // ===========================================
+
+  // --- Unirse a un grupo ---
+  socket.on('joinGrupo', ({ ID_GRUPO }) => {
+    if (!ID_GRUPO) return;
+
+    const nuevaSala = `grupo_${ID_GRUPO}`;
+
+    // abandonar sala anterior si existía
+    if (socket.data.currentGroupId) {
+      socket.leave(`grupo_${socket.data.currentGroupId}`);
+    }
+
+    socket.join(nuevaSala);
+    socket.data.currentGroupId = ID_GRUPO;
+
+    console.log(`👥 Socket ${socket.id} unido a ${nuevaSala}`);
+  });
+
+
+  // --- Nuevo mensaje de grupo ---
+  socket.on('mensajeGrupoNuevo', (msg) => {
+    const groupId = msg.ID_GRUPO;
+    if (!groupId) return;
+
+    const sala = `grupo_${groupId}`;
+    console.log(`💬 Mensaje NUEVO en ${sala}:`, msg);
+
+    // enviar a todos MENOS al que lo envió
+    socket.to(sala).emit('recibirMensajeGrupo', msg);
+  });
+
+
+  // ===========================================
+  // 5) DESCONECTAR USUARIO
+  // ===========================================
   socket.on('disconnect', () => {
     for (const [id, sid] of Object.entries(usuariosConectados)) {
       if (sid === socket.id) {
@@ -452,8 +454,11 @@ socket.on('mensajePrivado', ({
   });
 });
 
-// ==================== ARRANQUE DEL SERVIDOR ====================
+
+// ===========================================
+// 6) ARRANCAR SERVIDOR
+// ===========================================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor con Socket.IO corriendo en puerto ${PORT}`);
+  console.log(`🚀 Servidor con Socket.IO en puerto ${PORT}`);
 });
