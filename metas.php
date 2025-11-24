@@ -34,17 +34,51 @@
         </div>
     </header>
 
-    <h2>Metas Diarias</h2>
+    <div class="container my-4">
+        <div class="row">
 
-    <div class="cards">
-        <div class="card-tarea" data-tarea-id="1">✨ Crea un chat grupal</div>
-        <div class="card-tarea" data-tarea-id="2">📹 Haz una videollamada</div>
-        <div class="card-tarea" data-tarea-id="3">🔮 Haz una predicción</div>
-        <div class="card-tarea completada" data-tarea-id="4">
-            🖼️ Cambia tu foto de perfil
-            <i class="bi bi-check2-circle check-icon"></i>
-        </div>
+    <!-- 🟢 COLUMN IZQUIERDA – METAS -->
+         <div class="col-lg-5 mb-4">
+              <div class="card shadow-sm">
+             <div class="card-header bg-primary text-white">
+              <h5 class="m-0">🎯 Metas Diarias</h5>
+            </div>
+            <div class="card-body" id="metasList">
+          <!-- Metas generadas dinámicamente desde PHP -->
+             <ul class="list-group" id="listaMetas"></ul>
+         </div>
+          </div>
+      </div>
+
+    <!-- 🟡 COLUMN DERECHA – PUNTOS Y RECOMPENSAS -->
+     <div class="col-lg-7">
+
+      <!-- 🟡 CARD DE PUNTOS -->
+          <div class="card shadow-sm mb-4">
+          <div class="card-body d-flex justify-content-between align-items-center">
+              <h5 class="m-0 fw-bold">🏆 Tus Puntos Acumulados</h5>
+             <span class="badge bg-success fs-5 px-4 py-2">
+               ⭐ <span id="userPoints">120</span>
+             </span>
+         </div>
+         </div>
+
+      <!-- 🟠 CARD DE RECOMPENSAS -->
+         <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+              <h5 class="m-0">🎁 Recompensas Disponibles</h5>
+         </div>
+            <div class="card-body">
+             <div class="row" id="recompensasContainer">
+            <!-- Recompensas dinámicas desde la base de datos -->
+             </div>
+            </div>
+         </div>
+
+     </div>
+     </div>
     </div>
+
 
     <footer>
         ⚡ Nuevas tareas aparecerán cuando se cumplan las actuales.
@@ -54,41 +88,65 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-     const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
+     const BASE_API_URL = 'http://192.168.2.193/api';
         // ******************************************************
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const user = JSON.parse(localStorage.getItem('usuario'));
+      document.addEventListener('DOMContentLoaded', () => {
+    const user = JSON.parse(localStorage.getItem('usuario'));
 
-            if (!user) {
-                // Redirigir si no hay sesión
-                window.location.href = 'iniciosesion.php';
-                return;
-            }
+    if (!user) {
+        window.location.href = 'iniciosesion.php';
+        return;
+    }
 
-            // Actualizar datos del header (puntos e imagen de perfil)
-            const userPoints = document.getElementById('userPoints');
-            userPoints.textContent = user.puntos || 0;
-            // Código para cargar la imagen de perfil (similar al index.php)
+    document.getElementById('userPoints').textContent = user.puntos || 0;
 
-            // Implementación futura: Cargar tareas del usuario y su estado desde la BD
-            // loadTasks(user.id_usuario); 
-        });
+    loadMetas(user.id_usuario);
+    loadRecompensas();
+});
 
-        async function loadTasks(userId) {
-            try {
-                // Endpoint para obtener tareas. Ejemplo: api/tareas.php?user_id=1
-                const response = await fetch(`${BASE_API_URL}/tareas.php?user_id=${userId}`);
-                const tasks = await response.json();
-                
-                // Renderizar las tareas y añadir listeners para marcarlas como completadas
-                // ... (lógica de renderizado)
+async function loadMetas(userId) {
+    const res = await fetch(`${BASE_API_URL}/tareas.php?user_id=${userId}`);
+    const metas = await res.json();
 
-            } catch (error) {
-                console.error("Error al cargar tareas:", error);
-                // Mostrar mensaje de error al usuario
-            }
-        }
+    const lista = document.getElementById("listaMetas");
+    lista.innerHTML = '';
+
+    metas.forEach(meta => {
+        lista.innerHTML += `
+          <li class="list-group-item ${meta.completada ? 'completed' : ''}">
+            ${meta.descripcion}
+            <span class="badge bg-primary">+${meta.puntos} pts</span>
+          </li>`;
+    });
+}
+
+async function loadRecompensas() {
+    const res = await fetch(`${BASE_API_URL}/recompensas.php`);
+    const recompensas = await res.json();
+
+    const contenedor = document.getElementById("recompensasContainer");
+    contenedor.innerHTML = '';
+
+    recompensas.forEach(r => {
+        contenedor.innerHTML += `
+        <div class="col-6 col-md-4 mb-3">
+          <div class="reward-card">
+            <img src="${r.imagen_url}" alt="${r.nombre}">
+            <h6 class="mt-2">${r.nombre}</h6>
+            <p class="text-muted small">Costo: ${r.costo} pts</p>
+            <button class="btn btn-sm btn-success" onclick="canjear(${r.id})">Canjear</button>
+          </div>
+        </div>`;
+    });
+}
+
+function canjear(rewardId) {
+    alert(`Intentando canjear recompensa ID: ${rewardId}`);
+}
+
+
+     
     </script>
 </body>
 

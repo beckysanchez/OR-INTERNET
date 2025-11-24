@@ -98,9 +98,7 @@
         <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
             <i class="bi bi-camera-video-fill"></i>
         </button>
-        <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
-            <i class="bi bi-plus-lg"></i>
-        </button>
+        
     </div>
 </div>
 
@@ -180,7 +178,7 @@
     // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
     // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
     //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
-    const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
+    const BASE_API_URL = 'http://192.168.1.120/api'; 
     // ******************************************************
     // variables globales para el chat
     let user = null;

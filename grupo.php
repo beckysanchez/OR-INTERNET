@@ -67,7 +67,9 @@
                         <div id="groupsContainer">
                             <p class="text-muted small p-2 m-0">No hay grupos creados aún.</p>
                         </div>
+                     
                     </div>
+                    
                 </div>
             </aside>
 
@@ -114,7 +116,7 @@
         // Conexión con Socket.IO (mismo host, puerto 3000)
 const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
 
-const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api';
+const BASE_API_URL = 'http://192.168.2.193/api';
         // ******************************************************
 
         const createGroupBtn = document.getElementById('createGroupBtn');

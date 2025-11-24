@@ -1,7 +1,7 @@
 <?php
 $host = 'localhost'; 
 $user = 'root'; 
-$password = '1234';   // ← SIN contraseña (por ahora)
+$password = 'Monse171002.';   // ← SIN contraseña (por ahora)
 $dbname = 'pwci'; 
 
 $conn = new mysqli($host, $user, $password, $dbname);
