@@ -118,11 +118,14 @@
       </div>
 
       <div class="modal-body">
-        <label class="form-label">Descripción de la tarea</label>
-        <input type="text" id="tareaDescripcion" class="form-control mb-3" placeholder="Ej. Realizar una predicción">
-
-        <label class="form-label">Puntos que otorgará</label>
-        <input type="number" id="tareaPuntos" class="form-control" value="10" min="5" max="100">
+        <label class="form-label">Selecciona una tarea</label>
+    <select id="tareaDescripcion" class="form-control mb-3">
+        <option value="Realizar una predicción">Realizar una predicción (+5)</option>
+        <option value="Ganar una predicción">Ganar una predicción (+25)</option>
+        <option value="Agregar un amigo">Agregar un amigo (+10)</option>
+        <option value="Crear un chat grupal">Crear un chat grupal (+10)</option>
+    </select>
+    
       </div>
 
       <div class="modal-footer">
@@ -137,6 +140,10 @@
 
     </main>
 
+<!-- Bootstrap JS (bundle: incluye Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <!-- ========= JS ========= -->
@@ -340,6 +347,14 @@ const BASE_API_URL = 'http://192.168.1.120/api';
     }
 }
 
+    // Valores predefinidos según la tarea
+const tareaPuntosMap = {
+    "Realizar una predicción": 5,
+    "Ganar una predicción": 25,
+    "Agregar un amigo": 10,
+    "Crear un chat grupal": 10
+};
+
 // Función para abrir el modal (asegúrate de que el modal tenga el ID correcto)
 function abrirModalCrearTarea() {
   const modal = new bootstrap.Modal(document.getElementById('modalAsignarTarea'));
@@ -456,16 +471,16 @@ socket.on('recibirMensajeGrupo', (m) => {
 });
 async function crearTareaGrupo() {
     const descripcion = document.getElementById('tareaDescripcion').value;
-    const puntos = document.getElementById('tareaPuntos').value;
+    const puntos = tareaPuntosMap[descripcion]; // ← toma automáticamente los puntos correctos
 
-    if (!descripcion || !currentGroupId) {
-        alert("Falta descripción o no hay grupo seleccionado");
+    if (!currentGroupId) {
+        alert("Primero selecciona un grupo.");
         return;
     }
 
-    const response = await fetch(`${BASE_API_URL}/tareas/crear_tarea.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const response = await fetch(`${BASE_API_URL}/crear_tarea.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             id_grupo: currentGroupId,
             creador_id: user.ID_USUARIO,
@@ -476,13 +491,12 @@ async function crearTareaGrupo() {
 
     const data = await response.json();
     if (data.success) {
-        alert("Tarea asignada correctamente al grupo");
+        alert(`Tarea asignada correctamente (+${puntos} puntos).`);
         bootstrap.Modal.getInstance(document.getElementById('modalAsignarTarea')).hide();
     } else {
-        alert("Error al asignar tarea");
+        alert("Error al asignar tarea.");
     }
 }
-
 
     </script>
     

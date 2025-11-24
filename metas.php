@@ -88,7 +88,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-     const BASE_API_URL = 'http://192.168.2.193/api';
+     const BASE_API_URL = 'http://192.168.1.120/api';
         // ******************************************************
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -101,12 +101,12 @@
 
     document.getElementById('userPoints').textContent = user.puntos || 0;
 
-    loadMetas(user.id_usuario);
+    loadMetas(user.ID_USUARIO);
     loadRecompensas();
 });
 
 async function loadMetas(userId) {
-    const res = await fetch(`${BASE_API_URL}/tareas.php?user_id=${userId}`);
+    const res = await fetch(`${BASE_API_URL}/get_tareas_usuario.php?user_id=${userId}`);
     const metas = await res.json();
 
     const lista = document.getElementById("listaMetas");
@@ -114,12 +114,42 @@ async function loadMetas(userId) {
 
     metas.forEach(meta => {
         lista.innerHTML += `
-          <li class="list-group-item ${meta.completada ? 'completed' : ''}">
-            ${meta.descripcion}
-            <span class="badge bg-primary">+${meta.puntos} pts</span>
+          <li class="list-group-item d-flex justify-content-between align-items-center 
+              ${meta.completada == 1 ? 'completed bg-light' : ''}">
+              
+            <span>${meta.descripcion}</span>
+            <div>
+                <span class="badge bg-primary me-2">+${meta.puntos} pts</span>
+                ${
+                  meta.completada == 0 
+                  ? `<button class="btn btn-success btn-sm" onclick="completarMeta(${meta.id_usuario_tarea})">Completar</button>`
+                  : `<i class="bi bi-check-circle-fill text-success"></i>`
+                }
+            </div>
           </li>`;
     });
 }
+
+async function completarMeta(id_usuario_tarea) {
+    if (!confirm("¿Marcar esta tarea como completada?")) return;
+
+    const res = await fetch(`${BASE_API_URL}/completar_meta.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_usuario_tarea: id_usuario_tarea })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("🎉 ¡Tarea completada!");
+        loadMetas(JSON.parse(localStorage.getItem('usuario')).ID_USUARIO);
+    } else {
+        alert("Error al completar tarea");
+    }
+}
+
+
 
 async function loadRecompensas() {
     const res = await fetch(`${BASE_API_URL}/recompensas.php`);

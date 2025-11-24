@@ -1,5 +1,5 @@
 <?php
-include '../conexion.php';
+include '../db.php';
 header('Content-Type: application/json');
 
 $userId = $_GET['user_id'] ?? 0;
