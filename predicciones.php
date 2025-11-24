@@ -112,7 +112,8 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://localhost/OR_INTERNET/api';
+       // const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
+      const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
         // ******************************************************
         
         const matchItems = document.querySelectorAll('.match-item');
@@ -191,19 +192,29 @@
             try {
                 // CAMBIO DE URL: De Render a XAMPP (API PHP)
                 const res = await fetch(`api/predecir.php`, {
-                // ******************************************************
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                    usuario_id: user.ID_USUARIO,
-                    partido_id: parseInt(matchId),
-                    marcador_local: parseInt(home),
-                    marcador_visitante: parseInt(away)
-                })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        usuario_id: user.ID_USUARIO,
+        partido_id: parseInt(matchId),
+        marcador_local: parseInt(home),
+        marcador_visitante: parseInt(away)
+    })
+});
 
-                });
+// 👇 NUEVO: ver texto crudo que devuelve PHP
+const text = await res.text();
+console.log('🔎 Respuesta cruda de predecir.php:', text);
 
-                const data = await res.json();
+let data;
+try {
+    data = JSON.parse(text);
+} catch (e) {
+    console.error('❌ La respuesta NO es JSON válido. Revisa el texto de arriba, seguro es un error de PHP o MySQL.');
+    alert('El servidor devolvió un error (revisa la consola del navegador).');
+    return;
+}
+
 
                 if (res.ok) {
                     alert('✅ Predicción enviada correctamente: ' + data.msg);

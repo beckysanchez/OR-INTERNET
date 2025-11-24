@@ -135,7 +135,7 @@
         // ******************************************************
         // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
         // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-    //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; para host solo
+    //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
     const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
         // ******************************************************
 
@@ -332,6 +332,8 @@
           async function openChat(friendUsername, friendId) {
     chats = {}; // Ya no usamos localStorage
 
+    targetUserId = friendId;
+
     const chatTitle = document.getElementById('chatTitle');
     chatTitle.textContent = `Chat con ${friendUsername}`;
 
@@ -388,41 +390,7 @@
     </script>
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-document.getElementById('btnSend').addEventListener('click', sendMessage);
 
-async function sendMessage() {
-    const content = document.getElementById('msgInput').value;
-    if (!content) return;
-
-    await fetch('api/messages.php?action=send', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            sender_id: currentUserId,
-            receiver_id: currentFriendId,
-            content: content
-        })
-    });
-
-    document.getElementById('msgInput').value = '';
-    loadMessages();
-}
-
-async function loadMessages() {
-    const res = await fetch(`api/messages.php?action=get&user_id=${currentUserId}&friend_id=${currentFriendId}`);
-    const data = await res.json();
-
-    let html = '';
-    data.messages.forEach(msg => {
-        html += `<div class="${msg.id_emisor == currentUserId ? 'msg-me' : 'msg-peer'}">
-                    ${msg.contenido}
-                 </div>`;
-    });
-
-    document.querySelector('.chat-box').innerHTML = html;
-}
-</script>
 
    <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -508,15 +476,12 @@ async function loadMessages() {
     
     loadLiveMatch();
 </script>
-<<script>
+<script>
     // =========================================================
     // ⚠️ CONFIGURACIÓN DEL USUARIO ACTUAL
     // =========================================================
     const storedUser = JSON.parse(localStorage.getItem('usuario'));
     let currentUser = null;
-
-    // targetUserId será global (lo llenamos desde el otro script con window.targetUserId)
-    window.targetUserId = window.targetUserId || null;
 
     if (storedUser) {
         currentUser = {
@@ -527,10 +492,12 @@ async function loadMessages() {
         console.warn("No hay usuario logueado, la videollamada se desactivará.");
     }
 
+    // Este se llena cuando haces clic en "mensaje"
+    window.targetUserId = window.targetUserId || null;
+
     // =========================================================
-    // ⚙️ SOCKET.IO
+    // ⚙️ SOCKET.IO  (USA LA IP DEL SERVIDOR, NO localhost)
     // =========================================================
-    //const socket = io("http://localhost:3000"); // Servidor Node con Socket.IO
     const socket = io("http://192.168.2.193:3000");
 
     // Variables globales de WebRTC
@@ -539,7 +506,10 @@ async function loadMessages() {
     let remoteStream = null;
     const pendingIceCandidates = [];
 
-    // Configuración de Servidores STUN (para conectividad)
+    let inCall = false;            // ¿estoy en llamada?
+    let currentCallPeerId = null;  // con quién estoy en llamada
+
+    // Servidores STUN
     const rtcConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -547,21 +517,20 @@ async function loadMessages() {
         ]
     };
 
-    // Referencias a elementos del DOM
+    // Referencias DOM
     const btnVideollamada = document.getElementById("btnVideollamada");
-    const videoPopup = document.getElementById("videoPopup");
-    const closePopup = document.getElementById("closePopup");
-    const myVideo = document.getElementById("myVideo");
-    const friendVideo = document.getElementById("friendVideo");
+    const videoPopup       = document.getElementById("videoPopup");
+    const closePopup       = document.getElementById("closePopup");
+    const myVideo          = document.getElementById("myVideo");
+    const friendVideo      = document.getElementById("friendVideo");
 
     document.addEventListener("DOMContentLoaded", () => {
-        // Verificación básica de elementos
         if (!btnVideollamada || !videoPopup || !closePopup || !myVideo || !friendVideo) {
-            console.error("⚠️ Algunos elementos del DOM para la videollamada no se encuentran.");
+            console.error("⚠️ Elementos del DOM para videollamada no encontrados.");
             return;
         }
 
-        // Si no hay usuario logueado, desactivar videollamada
+        // Si no hay usuario logueado, bloqueamos
         if (!currentUser) {
             btnVideollamada.addEventListener("click", () => {
                 alert("Inicia sesión para usar la videollamada.");
@@ -571,11 +540,11 @@ async function loadMessages() {
 
         // 1. Registrar usuario al conectar
         socket.on('connect', () => {
-            console.log("🟢 Conectado al servidor de Socket.IO:", socket.id);
+            console.log("🟢 Conectado a Socket.IO:", socket.id);
             socket.emit("registrarUsuario", currentUser.id);
         });
 
-        // 2. Manejar clic de inicio de llamada (el que OFRECE la llamada)
+        // 2. Botón de videollamada (SOLO inicia llamada desde uno)
         btnVideollamada.addEventListener("click", () => {
             if (window.targetUserId) {
                 startCall(window.targetUserId);
@@ -584,36 +553,49 @@ async function loadMessages() {
             }
         });
 
-        // 3. Manejar cierre de POPUP
+        // 3. Botón cerrar
         closePopup.addEventListener("click", () => {
-            endCall(true); // Notificar al otro peer que la llamada terminó (si luego agregas evento)
+            endCall(true);
         });
 
-        // 4. Manejar eventos de señalización del servidor
+        // 4. Escuchar ofertas / respuestas / ICE
         setupSocketListeners();
     });
 
     // ====================================================================
-    // ⚙️ LÓGICA DE WEBRTC
+    // ⚙️ INICIAR LLAMADA (OFERENTE)
     // ====================================================================
-
-    // Función principal para iniciar la llamada (el que llama)
     async function startCall(targetId) {
+        // Ya estoy en llamada con esta persona
+        if (inCall && currentCallPeerId === targetId) {
+            console.log('⚠️ Ya estás en llamada con este usuario.');
+            return;
+        }
+
+        // Estoy en llamada con otra persona
+        if (inCall && currentCallPeerId !== targetId) {
+            alert('Ya estás en una llamada, cuelga primero.');
+            return;
+        }
+
         console.log('📞 Iniciando llamada a usuario:', targetId);
-        videoPopup.style.display = "flex"; // Mostrar popup
+        videoPopup.style.display = "flex";
 
         try {
+            currentCallPeerId = targetId;
+            inCall = true;
+
             await preparePeer(targetId);
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
 
-            // Enviar oferta al servidor para reenviarla al amigo
             socket.emit('offer', {
-                to: targetId,
+                to:   targetId,
                 from: currentUser.id,
-                sdp: offer
+                sdp:  offer
             });
-            console.log('📤 Enviando oferta WebRTC al servidor.');
+            console.log('📤 Oferta enviada.');
+
         } catch (e) {
             console.error('Error al iniciar llamada:', e);
             alert('Error al iniciar llamada: ' + (e?.message || e));
@@ -621,43 +603,42 @@ async function loadMessages() {
         }
     }
 
-    // Configura la conexión Peer
+    // Crear RTCPeerConnection + obtener cámara/micrófono
     async function preparePeer(targetId) {
-        if (pc) return; // Ya está configurado
+        if (pc) return; // ya creada
 
-        // Crear RTCPeerConnection
         pc = new RTCPeerConnection(rtcConfig);
 
-        // Manejo de ICE Candidates locales
+        // ICE locales -> se envían al otro usuario
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 socket.emit('ice-candidate', {
-                    to: targetId,
-                    from: currentUser.id,
+                    to:       targetId,
+                    from:     currentUser.id,
                     candidate: event.candidate
                 });
             }
         };
 
-        // Manejo del stream remoto
+        // Stream remoto
         pc.ontrack = (event) => {
             console.log('✅ Stream remoto recibido.');
             if (friendVideo) friendVideo.srcObject = event.streams[0];
         };
 
-        // Obtener cámara y micrófono
+        // Stream local
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             if (myVideo) myVideo.srcObject = localStream;
 
             localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
         } catch (e) {
-            console.error('❌ Error accediendo a la cámara/micrófono:', e);
-            throw new Error('Cámara/micrófono no disponibles. Verifica permisos (HTTPS/localhost).');
+            console.error('❌ Error cámara/micrófono:', e);
+            throw new Error('Cámara/micrófono no disponibles. Verifica permisos.');
         }
     }
 
-    // Aplica ICE candidates en cola cuando ya haya descripción remota
+    // Aplicar ICE en cola
     async function flushPendingIceCandidates() {
         if (!pc || !pc.remoteDescription || !pendingIceCandidates.length) return;
 
@@ -672,10 +653,10 @@ async function loadMessages() {
         }
     }
 
-    // Terminar la llamada y liberar recursos
+    // Terminar llamada
     function endCall(notifyPeer = false) {
-        if (notifyPeer) {
-            console.log('👋 Llamada terminada (a futuro puedes emitir un evento end-call).');
+        if (notifyPeer && currentCallPeerId) {
+            console.log('👋 Fin de llamada (podrías emitir end-call aquí).');
         }
 
         try { localStream && localStream.getTracks().forEach(t => t.stop()); } catch {}
@@ -686,55 +667,64 @@ async function loadMessages() {
         remoteStream = null;
         pendingIceCandidates.length = 0;
 
-        if (myVideo) myVideo.srcObject = null;
+        if (myVideo)     myVideo.srcObject = null;
         if (friendVideo) friendVideo.srcObject = null;
         videoPopup.style.display = "none";
+
+        inCall = false;
+        currentCallPeerId = null;
+
         console.log('📞 Llamada finalizada y recursos limpiados.');
     }
 
     // ====================================================================
-    // 📩 MANEJO DE EVENTOS DE SOCKET.IO (SEÑALIZACIÓN)
+    // 📩 LISTENERS DE SEÑALIZACIÓN
     // ====================================================================
     function setupSocketListeners() {
 
-        // 1) Oferta recibida (el que recibe la llamada)
+        // 🔹 Cuando YO recibo una oferta (soy el que contesta)
         socket.on('offer', async ({ from, sdp }) => {
-            // Solo respondemos si la oferta viene de quien tenemos como target (amigo actual)
-            if (!window.targetUserId || from !== window.targetUserId) {
-                console.log('⚠️ Oferta ignorada: no coincide con targetUserId actual.');
+            // Ignorar si es mi propia oferta (por si acaso)
+            if (from === currentUser.id) return;
+
+            // Ya estoy en llamada con otro distinto
+            if (inCall && currentCallPeerId && currentCallPeerId !== from) {
+                console.log('⚠️ Oferta ignorada, ya estoy en otra llamada.');
                 return;
             }
 
             console.log(`📥 Oferta recibida de ${from}. Preparando respuesta...`);
-            videoPopup.style.display = "flex"; // Abrir popup al recibir llamada
+            videoPopup.style.display = "flex";
 
             try {
+                currentCallPeerId = from;
+                inCall = true;
+
                 await preparePeer(from);
                 await pc.setRemoteDescription(new RTCSessionDescription(sdp));
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
 
-                // Enviar respuesta al servidor
                 socket.emit('answer', {
-                    to: from,
+                    to:   from,
                     from: currentUser.id,
-                    sdp: answer
+                    sdp:  answer
                 });
-                console.log('📤 Enviando respuesta WebRTC.');
+                console.log('📤 Respuesta enviada.');
 
-                // Procesar ICE en cola
                 flushPendingIceCandidates();
+
             } catch (e) {
-                console.error('Error al recibir oferta:', e);
+                console.error('Error al manejar oferta:', e);
                 endCall(false);
             }
         });
 
-        // 2) Respuesta recibida (el que inició la llamada)
+        // 🔹 Cuando YO inicié la llamada y recibo la respuesta
         socket.on('answer', async ({ from, sdp }) => {
-            if (!window.targetUserId || from !== window.targetUserId || !pc) {
-                console.log('⚠️ Respuesta ignorada: no coincide o no hay peer connection.');
+            if (!pc || from !== currentCallPeerId) {
+                console.log('⚠️ Respuesta ignorada: no coincide con currentCallPeerId.');
                 return;
             }
 
@@ -742,16 +732,17 @@ async function loadMessages() {
             try {
                 await pc.setRemoteDescription(new RTCSessionDescription(sdp));
                 flushPendingIceCandidates();
-                console.log('🎉 Conexión P2P casi lista.');
+                console.log('🎉 Conexión P2P lista (offer + answer).');
             } catch (e) {
                 console.error('Error al procesar respuesta:', e);
             }
         });
 
-        // 3) ICE candidates (ambos lados)
-        socket.on('ice-candidate', async ({ from, candidate }) => {
-            if (!window.targetUserId || from !== window.targetUserId) {
-                console.log('⚠️ ICE candidate ignorado: no coincide con targetUserId.');
+        // 🔹 ICE candidates (para ambos)
+        socket.on('ice-candidate', ({ from, candidate }) => {
+            if (!candidate) return;
+            if (!currentCallPeerId || from !== currentCallPeerId) {
+                console.log('⚠️ ICE candidate ignorado: no coincide con currentCallPeerId.');
                 return;
             }
 
@@ -759,7 +750,6 @@ async function loadMessages() {
             addIceCandidateOrQueue(candidate);
         });
 
-        // Helper para aplicar o encolar ICE
         async function addIceCandidateOrQueue(candidate) {
             if (pc && pc.remoteDescription && pc.remoteDescription.type) {
                 try {
@@ -773,6 +763,7 @@ async function loadMessages() {
         }
     }
 </script>
+
 
 
 </body>
