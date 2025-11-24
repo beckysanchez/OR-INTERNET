@@ -216,23 +216,29 @@ try {
 }
 
 
-                if (res.ok) {
-                    alert('✅ Predicción enviada correctamente: ' + data.msg);
-                    
-                    // --- Simulación de Actualización de Puntos (debe venir del backend) ---
-                    // En la vida real, solo se sumarían puntos si se acierta y el partido ha terminado.
-                    // Aquí, solo actualizamos la interfaz limpiándola.
-                    
-                    // Limpiar interfaz
-                    document.getElementById('scoreHome').value = '';
-                    document.getElementById('scoreAway').value = '';
-                    predictionForm.style.display = 'none';
-                    selectedMatchText.textContent = '';
-                    homeTeamLabel.textContent = 'Local';
-                    awayTeamLabel.textContent = 'Visitante';
-                    clearSelectedMatchHighlight();
+if (res.ok) {
+    alert('✅ Predicción enviada correctamente: ' + data.msg);
 
-                } else {
+    // 🔹 Actualizar puntos en pantalla
+    userPointsElement.textContent = parseInt(userPointsElement.textContent) + data.puntosGanados;
+
+    // 🔹 Actualizar usuario en localStorage
+    user.puntos = parseInt(userPointsElement.textContent);
+    localStorage.setItem('usuario', JSON.stringify(user));
+
+    // 🔹 Recargar predicciones pasadas automáticamente
+    loadPastPredictions(user.ID_USUARIO);
+
+    // Limpiar interfaz
+    document.getElementById('scoreHome').value = '';
+    document.getElementById('scoreAway').value = '';
+    predictionForm.style.display = 'none';
+    selectedMatchText.textContent = '';
+    homeTeamLabel.textContent = 'Local';
+    awayTeamLabel.textContent = 'Visitante';
+    clearSelectedMatchHighlight();
+}
+ else {
                     alert('⚠️ Error al enviar predicción: ' + (data.msg || 'Inténtalo de nuevo.'));
                 }
                 
