@@ -30,7 +30,7 @@
             // ******************************************************
             // CONSTANTE DE BASE URL LOCAL
             // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-            const BASE_API_URL = 'http://192.168.1.120/OR_INTERNET/api';
+            const BASE_API_URL = 'http://192.168.1.120/api';
             // ******************************************************
 
             document.addEventListener("DOMContentLoaded", () => {

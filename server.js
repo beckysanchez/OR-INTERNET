@@ -296,11 +296,17 @@ app.get('/grupo/:grupoId/mensajes', (req, res) => {
 // ------------------ SOCKET.IO ------------------
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { 
-    origin: ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'],
-    methods: ['GET', 'POST']
-  },
+  cors: {
+    origin: [
+      "http://localhost",
+      "http://localhost:3000",
+      "http://192.168.1.120",  // PC
+      "http://192.168.1.120:3000" // Socket
+    ],
+    methods: ["GET", "POST"]
+  }
 });
+
 
 
 const usuariosConectados = {};

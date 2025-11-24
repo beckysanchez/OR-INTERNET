@@ -135,7 +135,7 @@
         // ******************************************************
         // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
         // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-       const BASE_API_URL = 'http://192.168.1.120/OR_INTERNET/api'; 
+       const BASE_API_URL = 'http://192.168.1.120/api'; 
         // ******************************************************
 
         // Manejo de usuario logueado / cierre de sesión
@@ -304,96 +304,74 @@
                 }
             });
 
+async function getConversationId(myId, friendId) {
+    const res = await fetch(`${BASE_API_URL}/obtener_conversacion.php?id1=${myId}&id2=${friendId}`);
+    const data = await res.json();
+    return data.ID_CONVERSACION;
+
+}
+
+function addMessageToUI(text, sent = false) {
+    const div = document.createElement('div');
+    div.className = 'chat-message ' + (sent ? 'sent' : 'received');
+    div.textContent = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
 
             // Llamamos la función cuando cargue la página:
              document.addEventListener("DOMContentLoaded", loadLiveMatch);
-           function openChat(friendUsername, friendId) {
+          async function openChat(friendUsername, friendId) {
+    chats = {}; // Ya no usamos localStorage
 
-            chats = JSON.parse(localStorage.getItem('chats')) || {};
+    const chatTitle = document.getElementById('chatTitle');
+    chatTitle.textContent = `Chat con ${friendUsername}`;
 
-            if (!chats[friendUsername]) chats[friendUsername] = [];
-            const chatTitle = document.getElementById('chatTitle');
-            chatTitle.textContent = `Chat con ${friendUsername}`;
-            chatBox.innerHTML = '';
-            chats[friendUsername].forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'chat-message ' + (msg.sent ? 'sent' : 'received');
-            div.textContent = msg.text;
-            chatBox.appendChild(div);
+    chatBox.innerHTML = '';
+    input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
+
+    // 1️⃣ Obtener ID_CONVERSACION desde PHP (si no existe, lo crea)
+    const res = await fetch(`${BASE_API_URL}/obtener_conversacion.php?id1=${user.ID_USUARIO}&id2=${friendId}`);
+    const data = await res.json();
+    const conversationId = data.ID_CONVERSACION;
+
+    // 2️⃣ Cargar historial desde BD
+    fetch(`${BASE_API_URL}/obtener_mensajes.php?ID_CONVERSACION=${conversationId}`)
+        .then(res => res.json())
+        .then(mensajes => {
+            mensajes.forEach(m => {
+                addMessageToUI(m.MENSAJE, m.ID_EMISOR == user.ID_USUARIO);
+            });
         });
-        chatBox.scrollTop = chatBox.scrollHeight;
-        input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
-        sendBtn.onclick = () => {
-            const text = input.value.trim();
-            if (!text) return;
-            chats[friendUsername].push({ text, sent: true });
-            localStorage.setItem('chats', JSON.stringify(chats));
-            const div = document.createElement('div');
-            div.className = 'chat-message sent';
-            div.textContent = text;
-            chatBox.appendChild(div);
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
-         };
-        }
+
+    // 3️⃣ Enviar mensaje: guardar en BD + mostrar en UI
+    sendBtn.onclick = async () => {
+        const text = input.value.trim();
+        if (!text) return;
+
+        addMessageToUI(text, true); // Mostrar en UI local
+        input.value = '';
+
+        await fetch(`${BASE_API_URL}/enviar_mensaje.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ID_CONVERSACION: conversationId,
+                ID_EMISOR: user.ID_USUARIO,
+                MENSAJE: text
+            })
+        });
+    };
+}
             renderFriends();
-
         });
-
-
         
     </script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("🔥 Página cargada, iniciando videollamada básica");
-
-    // 🔹 Referencias correctas a los elementos
-    const btnVideollamada = document.getElementById("btnVideollamada");
-    const videoPopup = document.getElementById("videoPopup");
-    const closePopup = document.getElementById("closePopup");
-    const myVideo = document.getElementById("myVideo");
-    const friendVideo = document.getElementById("friendVideo");
-
-    if (!btnVideollamada || !videoPopup || !closePopup || !myVideo) {
-        console.error("⚠️ Alguno de los elementos de videollamada NO existe en el HTML");
-        return;
-    }
-
-    console.log("🎯 Elementos encontrados correctamente");
-
-    // 🟢 ABRIR POPUP Y MOSTRAR MI CÁMARA
-    btnVideollamada.addEventListener("click", async () => {
-        console.log("🎥 Clic en botón de videollamada");
-        videoPopup.style.display = "flex";
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            myVideo.srcObject = stream;
-        } catch (err) {
-            console.error("❌ No se pudo acceder a cámara/micrófono", err);
-            alert("Error al acceder a la cámara: " + err.message);
-        }
-    });
-
-    // 🔴 CERRAR POPUP Y APAGAR CÁMARA
-    closePopup.addEventListener("click", () => {
-        videoPopup.style.display = "none";
-        if (myVideo.srcObject) {
-            myVideo.srcObject.getTracks().forEach(track => track.stop());
-            myVideo.srcObject = null;
-        }
-    });
-});
-</script>
-
-
    <script>
-   document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
     const partido = JSON.parse(localStorage.getItem("partidoSeleccionado"));
     if (partido) {
         document.getElementById("selectedMatch").textContent = partido.name;
@@ -463,7 +441,257 @@ document.addEventListener("DOMContentLoaded", () => {
     
     loadLiveMatch();
 </script>
+<script>
+    // =========================================================
+    // ⚠️ CONFIGURACIÓN NECESARIA ⚠️
+    // Asegúrate de que estas variables se definan ANTES de este script
+    // Deben contener la información del usuario logueado y el objetivo de la llamada.
+    const currentUser = { id: 1, username: 'usuarioA' }; // <-- Reemplazar con tu lógica de sesión
+    let targetUserId = 2; // <-- Reemplazar con el ID del amigo al que se está llamando
+    // =========================================================
 
+    const socket = io(); // Asume que el socket se conecta al mismo host/puerto
+
+    // Variables globales de WebRTC
+    let pc = null;
+    let localStream = null;
+    let remoteStream = null;
+    const pendingIceCandidates = [];
+
+    // Configuración de Servidores STUN (NECESARIA para conectividad)
+    const rtcConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            // Puedes añadir más servidores STUN o un servidor TURN si lo tienes
+        ]
+    };
+
+    // Referencias a elementos del DOM
+    const btnVideollamada = document.getElementById("btnVideollamada");
+    const videoPopup = document.getElementById("videoPopup");
+    const closePopup = document.getElementById("closePopup");
+    const myVideo = document.getElementById("myVideo");
+    const friendVideo = document.getElementById("friendVideo");
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!btnVideollamada || !videoPopup || !closePopup || !myVideo || !friendVideo) {
+            console.error("⚠️ Algunos elementos del DOM no se encuentran.");
+            return;
+        }
+
+        // 1. Registrar usuario al conectar
+        socket.on('connect', () => {
+            console.log("🟢 Conectado al servidor de Socket.IO:", socket.id);
+            // Esto le dice al servidor qué ID de usuario está usando este socket
+            socket.emit("registrarUsuario", currentUser.id);
+        });
+
+        // 2. Manejar clic de inicio de llamada (el OFERENTE)
+        btnVideollamada.addEventListener("click", () => {
+            if (targetUserId) {
+                startCall(targetUserId);
+            } else {
+                alert('Selecciona un amigo para llamar.');
+            }
+        });
+
+        // 3. Manejar cierre de POPUP
+        closePopup.addEventListener("click", () => {
+            endCall(true); // Notificar al otro peer que la llamada terminó
+        });
+
+        // 4. Manejar eventos de señalización del servidor
+        setupSocketListeners();
+    });
+
+    // ====================================================================
+    // ⚙️ LÓGICA DE WEBRTC
+    // ====================================================================
+
+    // Función principal para iniciar la llamada (el que ofrece/llama)
+    async function startCall(targetId) {
+        console.log('📞 Iniciando llamada a usuario:', targetId);
+        videoPopup.style.display = "flex"; // Abrir popup
+
+        try {
+            await preparePeer(targetId);
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            
+            // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+            // Tu servidor espera un evento llamado 'offer'
+            socket.emit('offer', {
+                to: targetId,
+                from: currentUser.id,
+                sdp: offer
+            });
+            console.log('📤 Enviando oferta WebRTC al servidor.');
+
+        } catch (e) {
+            console.error('Error al iniciar llamada:', e);
+            alert('Error al iniciar llamada: ' + (e?.message || e));
+            endCall(false);
+        }
+    }
+
+    // Configura la conexión Peer
+    async function preparePeer(targetId) {
+        if (pc) return; // Ya está configurado
+
+        // Crea la conexión Peer con la configuración STUN
+        pc = new RTCPeerConnection(rtcConfig);
+
+        // 👂 Manejo de ICE Candidates locales
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+                // Tu servidor espera un evento llamado 'ice-candidate'
+                socket.emit('ice-candidate', {
+                    to: targetId,
+                    from: currentUser.id,
+                    candidate: event.candidate
+                });
+            }
+        };
+
+        // 👂 Manejo del stream remoto que llega
+        pc.ontrack = (event) => {
+            console.log('✅ Stream remoto recibido.');
+            if (friendVideo) friendVideo.srcObject = event.streams[0];
+        };
+
+        // Obtener stream de la cámara (Tu código original + verificación de seguridad)
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            if (myVideo) myVideo.srcObject = localStream;
+            
+            // Añadir los tracks locales a la conexión Peer
+            localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+        } catch (e) {
+            console.error('❌ Error accediendo a la cámara:', e);
+            throw new Error('Cámara/micrófono no disponibles. ¿Estás en HTTPS/localhost?');
+        }
+    }
+
+    // Procesa los ICE Candidates en cola cuando llega la Remote Description
+    async function flushPendingIceCandidates() {
+        if (!pc || !pc.remoteDescription || !pendingIceCandidates.length) return;
+        console.log(`🚿 Aplicando ${pendingIceCandidates.length} ICE candidates en cola...`);
+        
+        const queued = pendingIceCandidates.splice(0, pendingIceCandidates.length); // Vaciar la cola
+        for (const c of queued) {
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(c));
+            } catch (e) {
+                console.error('Error aplicando ICE candidate:', e);
+            }
+        }
+    }
+
+
+    // Finaliza la llamada y limpia recursos
+    function endCall(notifyPeer = false) {
+        if (notifyPeer) {
+            // Se puede agregar un evento 'end-call' a tu servidor si es necesario
+            console.log('👋 Notificando el fin de la llamada.');
+        }
+
+        try { localStream && localStream.getTracks().forEach(t => t.stop()); } catch {}
+        try { pc && pc.close(); } catch {}
+
+        pc = null;
+        localStream = null;
+        remoteStream = null;
+        pendingIceCandidates.length = 0;
+
+        if (myVideo) myVideo.srcObject = null;
+        if (friendVideo) friendVideo.srcObject = null;
+        videoPopup.style.display = "none";
+        console.log('📞 Llamada finalizada y recursos limpiados.');
+    }
+
+    // ====================================================================
+    // 📩 MANEJO DE EVENTOS DE SOCKET.IO
+    // ====================================================================
+    function setupSocketListeners() {
+        // Escucha la OFERTA (el que RECIBE la llamada)
+        // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+        socket.on('offer', async ({ from, sdp }) => {
+            // Asegúrate de que el ID sea el tuyo y el de destino sea el correcto
+            if (from === targetUserId) { // Simplificado: asume que es el único con quien hablamos
+                console.log(`📥 Oferta recibida de ${from}. Preparando respuesta...`);
+                videoPopup.style.display = "flex"; // Abrir popup al recibir llamada
+                
+                try {
+                    await preparePeer(from);
+                    await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+                    
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+
+                    // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+                    // Tu servidor espera un evento llamado 'answer'
+                    socket.emit('answer', {
+                        to: from,
+                        from: currentUser.id,
+                        sdp: answer
+                    });
+                    console.log('📤 Enviando respuesta WebRTC.');
+
+                    // Procesar los candidatos que se hayan acumulado mientras esperábamos la oferta
+                    flushPendingIceCandidates(); 
+
+                } catch (e) {
+                    console.error('Error al recibir oferta:', e);
+                    endCall(false);
+                }
+            }
+        });
+
+        // Escucha la RESPUESTA (el que OFRECIÓ la llamada)
+        // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+        socket.on('answer', async ({ from, sdp }) => {
+             if (from === targetUserId && pc) {
+                console.log(`📥 Respuesta recibida de ${from}. Estableciendo conexión...`);
+                try {
+                    await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+                    // Ya tenemos la descripción remota, ahora procesamos los candidatos en cola
+                    flushPendingIceCandidates(); 
+                    console.log('🎉 Conexión P2P casi lista.');
+                } catch(e) {
+                    console.error('Error al recibir respuesta:', e);
+                }
+            }
+        });
+
+        // Escucha los ICE CANDIDATES (ambos peers)
+        // 🔥 ADAPTADO A TUS EVENTOS DE SERVER.JS 🔥
+        socket.on('ice-candidate', async ({ from, candidate }) => {
+            if (from === targetUserId) {
+                console.log(`📥 ICE Candidate recibido de ${from}.`);
+                // Usamos la función de cola para aplicar el candidato solo cuando haya RemoteDescription
+                addIceCandidateOrQueue(candidate);
+            }
+        });
+
+        // Función auxiliar para aplicar o encolar ICE
+        async function addIceCandidateOrQueue(candidate) {
+            // Si la conexión existe Y tiene una descripción remota ya establecida
+            if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+                try {
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                    // Esto puede pasar si el candidato ya no es válido, generalmente se ignora
+                    console.warn('Error aplicando ICE candidate:', e.name);
+                }
+            } else {
+                // Si la conexión aún no ha recibido la Offer o Answer, guardamos el candidato
+                pendingIceCandidates.push(candidate);
+            }
+        }
+    }
+</script>
 
 </body>
 
