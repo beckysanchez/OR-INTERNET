@@ -23,11 +23,7 @@
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">0</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
+                 <img id="profileImg" class="rounded-circle" width="40" height="40">
             </div>
         </div>
     </header>
@@ -122,8 +118,8 @@
     <select id="tareaDescripcion" class="form-control mb-3">
         <option value="Realizar una predicción">Realizar una predicción (+5)</option>
         <option value="Ganar una predicción">Ganar una predicción (+25)</option>
-        <option value="Agregar un amigo">Agregar un amigo (+10)</option>
-        <option value="Crear un chat grupal">Crear un chat grupal (+10)</option>
+        <option value="Llegar a 20 puntos">Llegar a 20 puntos (+10)</option>
+        <option value="Ganar 2 preddiciones">Ganar 2 predicciones (+10)</option>
     </select>
     
       </div>
@@ -177,7 +173,7 @@ const socket = io(`${window.location.protocol}//${window.location.hostname}:3000
     }
 
     const userId = user.ID_USUARIO || user.id_usuario;
-    document.getElementById('userPoints').textContent = user.puntos || 0;
+  
 
     // Registrar usuario en socket (ya lo usas en index.php)
     socket.on('connect', () => {

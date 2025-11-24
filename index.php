@@ -28,13 +28,7 @@
                 <input type="text" class="form-control form-control-sm d-none d-sm-block" style="width:200px;"
                     placeholder="Buscar...">
 
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">0</span>
-                </div>
-
                <img id="profileImg" class="rounded-circle" width="40" height="40">
-
-
                 <button id="btnCerrarSesion" class="btn btn-outline-danger btn-sm" style="display:none;">
                     Cerrar sesión
                 </button>
@@ -189,14 +183,17 @@
     document.addEventListener("DOMContentLoaded", async () => {
         user = JSON.parse(localStorage.getItem('usuario'));
 
-        const userPoints = document.getElementById('userPoints');
+
         const profileImg = document.getElementById('profileImg');
         const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
         const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
+        
+
+
         if (user) {
-            userPoints.textContent = user.puntos || 0;
+           
             profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
 
             if (loginBtn) loginBtn.remove();
@@ -204,8 +201,13 @@
 
             btnCerrarSesion.style.display = 'inline-block';
         } else {
+<<<<<<< Updated upstream
             userPoints.textContent = 0;
             profileImg.src = 'img/basico.png';
+=======
+           
+            profileImg.src = 'img/usuario-generico.png';
+>>>>>>> Stashed changes
             btnCerrarSesion.style.display = 'none';
         }
 
@@ -682,9 +684,9 @@
         });
     }
 
-async function loadProfileImage() {
-    const user = JSON.parse(localStorage.getItem('usuario'));
+
     
+<<<<<<< Updated upstream
     const res = await fetch(`${BASE_API_URL}/get_recompensa_usuario.php?id_usuario=${user.ID_USUARIO}`);
     const recompensas = await res.json();
 
@@ -698,6 +700,8 @@ async function loadProfileImage() {
 
     loadProfileImage();
 
+=======
+>>>>>>> Stashed changes
     loadLiveMatch();
 </script>
 <script>

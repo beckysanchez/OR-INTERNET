@@ -25,13 +25,7 @@
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">120</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
-
-            </div>
+                  <img id="profileImg" class="rounded-circle" width="40" height="40"> </div>
         </div>
     </header>
 
@@ -113,7 +107,11 @@
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
        // const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
+<<<<<<< Updated upstream
       const BASE_API_URL = 'http://192.168.1.93/api'; 
+=======
+      const BASE_API_URL = 'http://192.168.1.120/api'; 
+>>>>>>> Stashed changes
         // ******************************************************
         
         const matchItems = document.querySelectorAll('.match-item');
@@ -121,7 +119,6 @@
         const selectedMatchText = document.getElementById('selectedMatch');
         const selectedMatchIdInput = document.getElementById('selectedMatchId');
         const submitPrediction = document.getElementById('submitPrediction');
-        const userPointsElement = document.getElementById('userPoints');
         const homeTeamLabel = document.getElementById('homeTeam');
         const awayTeamLabel = document.getElementById('awayTeam');
         const pastResults = document.getElementById('pastResults');
@@ -136,7 +133,6 @@
             }
             
             // Actualizar puntos y perfil del usuario
-            userPointsElement.textContent = user.puntos || 0;
             // ... (Lógica para actualizar la imagen de perfil)
             
             // Implementación futura: cargar partidos y resultados pasados desde la BD
@@ -216,8 +212,30 @@ try {
 }
 
 
+<<<<<<< Updated upstream
 if (res.ok) {
     alert('✅ Predicción enviada correctamente: ' + data.msg);
+=======
+                if (res.ok) {
+                    alert('✅ Predicción enviada correctamente: ' + data.msg);
+                    
+                    // --- Simulación de Actualización de Puntos (debe venir del backend) ---
+                    // En la vida real, solo se sumarían puntos si se acierta y el partido ha terminado.
+                    // Aquí, solo actualizamos la interfaz limpiándola.
+                    userPointsElement.textContent = parseInt(userPointsElement.textContent) + data.puntosGanados;
+                       user.puntos = parseInt(userPointsElement.textContent);
+    localStorage.setItem('usuario', JSON.stringify(user));
+    loadPastPredictions(user.ID_USUARIO);
+                    
+                    // Limpiar interfaz
+                       document.getElementById('scoreHome').value = '';
+    document.getElementById('scoreAway').value = '';
+    predictionForm.style.display = 'none';
+    selectedMatchText.textContent = '';
+    homeTeamLabel.textContent = 'Local';
+    awayTeamLabel.textContent = 'Visitante';
+    clearSelectedMatchHighlight();
+>>>>>>> Stashed changes
 
     // 🔹 Actualizar puntos en pantalla
     userPointsElement.textContent = parseInt(userPointsElement.textContent) + data.puntosGanados;

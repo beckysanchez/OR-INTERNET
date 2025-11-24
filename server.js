@@ -313,17 +313,22 @@ const usuariosConectados = {}; // { userId: socketId }
 
 io.on('connection', (socket) => {
   console.log('🟢 Usuario conectado:', socket.id);
-  
+
   // ===========================================
   // 1) REGISTRO DE USUARIO
   // ===========================================
   socket.on('registrarUsuario', (userId) => {
     usuariosConectados[userId] = socket.id;
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
+<<<<<<< Updated upstream
 
     // Aquí podrías actualizar estado online en BD y emitir eventos
     // ...
   });
+=======
+  });
+
+>>>>>>> Stashed changes
 
   // ===========================================
   // 2) WEBRTC SEÑALIZACIÓN
@@ -445,11 +450,15 @@ io.on('connection', (socket) => {
     for (const [id, sid] of Object.entries(usuariosConectados)) {
       if (sid === socket.id) {
         delete usuariosConectados[id];
+<<<<<<< Updated upstream
 
         console.log(`🚫 Usuario ${id} desconectado`);
 
         // Aquí podrías actualizar estado offline en BD y emitir evento
         // ...
+=======
+        console.log(`🚫 Usuario ${id} desconectado`);
+>>>>>>> Stashed changes
       }
     }
   });

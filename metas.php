@@ -24,11 +24,8 @@
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">120</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
+               <img id="profileImg" class="rounded-circle" width="40" height="40">
+             
 
             </div>
         </div>
@@ -92,9 +89,11 @@
          </div>
             <div class="card-body">
              <div class="row" id="recompensasContainer">
-                <button onclick="activarRecompensa(${r.id_recompensa})" class="btn btn-sm btn-primary">
-   Usar como foto
-</button>
+              <button class="btn btn-sm btn-primary mt-1" 
+                 onclick="activarRecompensa('${r.imagen_url}')">
+                    Usar como foto
+            </button>
+
 
             <!-- Recompensas dinámicas desde la base de datos -->
              </div>
@@ -126,6 +125,12 @@
     }
 
     document.getElementById('userPoints').textContent = user.puntos || 0;
+document.addEventListener('DOMContentLoaded', () => {
+    const user = JSON.parse(localStorage.getItem('usuario'));
+    if (user && user.foto_perfil) {
+        document.getElementById('profileImg').src = user.foto_perfil;
+    }
+});
 
     loadMetas(user.ID_USUARIO);
     loadRecompensas();
@@ -220,6 +225,7 @@ async function loadRecompensas() {
 
         console.log('Respuesta de get_recompensa.php:', data);
 
+<<<<<<< Updated upstream
         // Aseguramos que sea un arreglo
         const recompensas = Array.isArray(data)
             ? data
@@ -253,12 +259,52 @@ async function loadRecompensas() {
     } catch (error) {
         console.error("Error cargando recompensas:", error);
     }
+=======
+    recompensas.forEach(r => {
+        contenedor.innerHTML += `
+        <div class="col-6 col-md-4 mb-3">
+          <div class="reward-card">
+            <img src="${r.imagen_url}" alt="${r.nombre}">
+            <h6 class="mt-2">${r.nombre}</h6>
+            <p class="text-muted small">Costo: ${r.costo} pts</p>
+            <button class="btn btn-sm btn-success" onclick="canjear(${r.id_recompensa})">Canjear</button>
+          </div>
+        </div>`;
+    });
+>>>>>>> Stashed changes
 }
 
 function canjear(rewardId) {
     alert(`Intentando canjear recompensa ID: ${rewardId}`);
 }
 
+function activarRecompensa(imagenUrl) {
+    const user = JSON.parse(localStorage.getItem('usuario'));
+
+    fetch(`${BASE_API_URL}/actualizar_foto.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id_usuario: user.id_usuario,
+            imagen_url: imagenUrl
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Foto actualizada correctamente 🎉");
+
+            // 🔹 Actualiza localStorage con la nueva imagen
+            user.foto_perfil = imagenUrl;
+            localStorage.setItem('usuario', JSON.stringify(user));
+
+            // 🔹 Actualiza INMEDIATAMENTE la imagen del header
+            document.getElementById('profileImg').src = imagenUrl;
+        } else {
+            alert("Error al actualizar foto");
+        }
+    });
+}
 
      
     </script>
