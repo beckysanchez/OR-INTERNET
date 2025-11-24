@@ -39,14 +39,11 @@
 
     <div class="container-main">
 
-        <div class="matches-list">
-            <h4>Partidos</h4>
-            <div class="match-item" data-match-id="M001" data-match="Brasil vs España">Brasil vs España</div>
-            <div class="match-item" data-match-id="M002" data-match="Francia vs Alemania">Francia vs Alemania</div>
-            <div class="match-item" data-match-id="M003" data-match="Argentina vs México">Argentina vs México</div>
-            <div class="match-item" data-match-id="M004" data-match="Portugal vs Inglaterra">Portugal vs Inglaterra</div>
-            <div class="match-item" data-match-id="M005" data-match="Japón vs Corea del Sur">Japón vs Corea del Sur</div>
-        </div>
+    <div class="matches-list">
+        <h4>Partidos</h4>
+        <div id="matchContainer"></div>
+    </div>
+
 
         <div class="prediction-card" id="predictionCard">
             <h3>MARCADOR</h3>
@@ -115,7 +112,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-     const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
+        const BASE_API_URL = 'http://localhost/OR_INTERNET/api';
         // ******************************************************
         
         const matchItems = document.querySelectorAll('.match-item');
@@ -142,8 +139,8 @@
             // ... (Lógica para actualizar la imagen de perfil)
             
             // Implementación futura: cargar partidos y resultados pasados desde la BD
-            // loadMatches(); 
-            // loadPastPredictions(user.id_usuario);
+            loadMatches(); 
+            loadPastPredictions(user.ID_USUARIO);
         });
         
         function clearSelectedMatchHighlight() {
@@ -192,18 +189,18 @@
             }
 
             try {
-                // ******************************************************
                 // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                const res = await fetch(`${BASE_API_URL}/predecir.php`, {
+                const res = await fetch(`api/predecir.php`, {
                 // ******************************************************
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        usuario_id: user.id_usuario,
-                        partido_id: matchId,
-                        marcador_local: parseInt(home),
-                        marcador_visitante: parseInt(away)
-                    })
+                    usuario_id: user.ID_USUARIO,
+                    partido_id: parseInt(matchId),
+                    marcador_local: parseInt(home),
+                    marcador_visitante: parseInt(away)
+                })
+
                 });
 
                 const data = await res.json();
@@ -233,6 +230,74 @@
                 alert('Error al conectar con el servidor. Asegúrate de que XAMPP esté corriendo.');
             }
         });
+
+        async function loadPastPredictions(id) {
+    try {
+        const res = await fetch(`api/get_predicciones_usuario.php?id=${id}`);
+        const data = await res.json();
+        pastResults.innerHTML = "";
+
+        if (data.length === 0) {
+            pastResults.innerHTML = "<div class='alert alert-secondary'>Sin predicciones aún...</div>";
+            return;
+        }
+
+        data.forEach(p => {
+            let icon = p.acertado == 1 ? "✅ +25 pts" : "❌ +0 pts";
+            pastResults.innerHTML += `
+                <div class="result-item">
+                    ${p.equipo_local} ${p.pred_local} - ${p.equipo_visitante} ${p.pred_visitante} ${icon}
+                </div>`;
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+
+        async function loadMatches() {
+    try {
+        const res = await fetch("api/get_partidos.php");
+        const data = await res.json();
+
+        const container = document.getElementById("matchContainer");
+        container.innerHTML = ""; 
+
+        if (data.length === 0) {
+            container.innerHTML = "<div class='alert alert-warning'>No hay partidos.</div>";
+            return;
+        }
+
+        data.forEach(p => {
+            const div = document.createElement("div");
+            div.classList.add("match-item");
+            div.setAttribute("data-match-id", p.id_partido);
+            div.setAttribute("data-match", `${p.equipo_local} vs ${p.equipo_visitante}`);
+            div.textContent = `${p.equipo_local} vs ${p.equipo_visitante}`;
+
+            div.addEventListener("click", () => {
+                clearSelectedMatchHighlight();
+                div.classList.add("selected");
+
+                selectedMatchText.textContent = div.getAttribute("data-match");
+                selectedMatchIdInput.value = div.getAttribute("data-match-id");
+
+                const parts = selectedMatchText.textContent.split(" vs ");
+                homeTeamLabel.textContent = parts[0];
+                awayTeamLabel.textContent = parts[1];
+                predictionForm.style.display = "block";
+            });
+
+            container.appendChild(div);
+        });
+
+    } catch (err) {
+        console.error(err);
+        alert("Error al cargar los partidos.");
+    }
+}
+
     </script>
 
 </body>
