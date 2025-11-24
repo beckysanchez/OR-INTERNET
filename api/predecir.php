@@ -29,8 +29,8 @@ if ($result->num_rows > 0) {
    🎲 SIMULACIÓN TEMPORAL DE RESULTADO DEL PARTIDO (NO REAL)
    mientras no haya marcador real en la BD
 ----------------------------------------------------------- */
-$simLocal  = rand(0,5);
-$simVisit  = rand(0,5);
+$simLocal  = rand(1);
+$simVisit  = rand(1);
 
 // Determinar si acertó o no
 $acertado = ($simLocal == $pred_local && $simVisit == $pred_visitante) ? 1 : 0;
