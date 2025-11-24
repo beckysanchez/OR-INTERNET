@@ -322,18 +322,18 @@ io.on('connection', (socket) => {
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
 
     // Marcar en la base de datos como online
-    const sqlOnline = `
-      INSERT INTO estado_usuario (id_usuario, online)
-      VALUES (?, 1)
-      ON DUPLICATE KEY UPDATE online=1, ultima_actualizacion=NOW()
-    `;
-    db.query(sqlOnline, [userId], (err) => {
-      if (err) console.error('❌ Error al actualizar estado online:', err);
-    });
+    //const sqlOnline = `
+      //INSERT INTO estado_usuario (id_usuario, online)
+      //VALUES (?, 1)
+      //ON DUPLICATE KEY UPDATE online=1, ultima_actualizacion=NOW()
+   // `;
+   // db.query(sqlOnline, [userId], (err) => {
+    //  if (err) console.error('❌ Error al actualizar estado online:', err);
+   // });
 
     // Notificar a todos los demás que este usuario está online
-    socket.broadcast.emit('usuarioOnline', { id_usuario: userId });
-  });
+    //socket.broadcast.emit('usuarioOnline', { id_usuario: userId });
+ // });
 
 
   // ===========================================
@@ -463,18 +463,18 @@ socket.on('disconnect', () => {
         delete usuariosConectados[id];
 
         // Marcar en la base de datos como offline
-        db.query(
-          `UPDATE estado_usuario SET online=0, ultima_actualizacion=NOW() WHERE id_usuario=?`,
-          [id],
-          (err) => {
-            if (err) console.error('❌ Error al actualizar estado offline:', err);
-          }
-        );
+       // db.query(
+         // `UPDATE estado_usuario SET online=0, ultima_actualizacion=NOW() WHERE id_usuario=?`,
+        //  [id],
+        //  (err) => {
+       //     if (err) console.error('❌ Error al actualizar estado offline:', err);
+       //   }
+       // );
 
         console.log(`🚫 Usuario ${id} desconectado`);
 
         // Notificar a todos los demás que este usuario está offline
-        socket.broadcast.emit('usuarioOffline', { id_usuario: id });
+        //socket.broadcast.emit('usuarioOffline', { id_usuario: id });
       }
     }
   });

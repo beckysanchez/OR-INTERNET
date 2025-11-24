@@ -1,10 +1,14 @@
 <?php
-include '../db.php';
+include __DIR__ . '/../db.php';
 header('Content-Type: application/json');
 
-$sql = "SELECT * FROM recompensas";
+$sql = "SELECT id_recompensa, nombre, imagen_url, costo FROM recompensas";
 $result = $conn->query($sql);
 
-$recompensas = $result->fetch_all(MYSQLI_ASSOC);
-echo json_encode(["success" => true, "recompensas" => $recompensas]);
+$recompensas = [];
+while ($row = $result->fetch_assoc()) {
+    $recompensas[] = $row;
+}
+
+echo json_encode($recompensas);
 ?>

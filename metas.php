@@ -92,6 +92,10 @@
          </div>
             <div class="card-body">
              <div class="row" id="recompensasContainer">
+                <button onclick="activarRecompensa(${r.id_recompensa})" class="btn btn-sm btn-primary">
+   Usar como foto
+</button>
+
             <!-- Recompensas dinámicas desde la base de datos -->
              </div>
             </div>
@@ -182,10 +186,35 @@ async function completarMeta(id_usuario_tarea, descripcion) {
 }
 
 
+async function loadRanking() {
+    try {
+        const res = await fetch(`${BASE_API_URL}/get_ranking.php`);
+        const ranking = await res.json();
+
+        const rankingBody = document.getElementById("rankingTableBody");
+        rankingBody.innerHTML = '';
+
+        ranking.forEach((user, index) => {
+            rankingBody.innerHTML += `
+            <tr>
+                <td><strong>${index + 1}</strong></td>
+                <td>
+                    <img src="${user.foto || 'img/usuario-generico.png'}" 
+                         class="rounded-circle me-2" width="30" height="30">
+                    ${user.Username}
+                </td>
+                <td><span class="badge bg-success">${user.puntos} ⭐</span></td>
+            </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando el ranking:", error);
+    }
+}
 
 
 async function loadRecompensas() {
-    const res = await fetch(`${BASE_API_URL}/recompensas.php`);
+    const res = await fetch(`${BASE_API_URL}/get_recompensa.php`);
     const recompensas = await res.json();
 
     const contenedor = document.getElementById("recompensasContainer");
