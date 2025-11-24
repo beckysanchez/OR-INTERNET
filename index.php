@@ -90,40 +90,64 @@
             </div>
         </section>
 
-            <aside class="col-lg-3">
-                     <div class="card p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
-                        <div class="d-flex align-items-center gap-2">
-                        
-                          <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
-    <i class="bi bi-camera-video-fill"></i>
-</button>
-                            <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="chat-box mb-2"></div>
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
-                        <button class="btn btn-primary">Enviar</button>
-                    </div>
-                </div>
-                <div id="videoPopup" class="video-popup" style="display:none;">
-                    <div class="video-content">
-                        <button id="closePopup" class="btn btn-sm btn-danger mb-2">Cerrar</button>
-                        <h5 class="text-center text-primary">Videollamada</h5>
-                        <div class="d-flex gap-2 flex-wrap justify-content-center">
-                            <video id="myVideo" autoplay playsinline muted class="rounded border"
-                                style="width:45%; min-width:200px;"></video>
-                            <video id="friendVideo" autoplay playsinline class="rounded border"
-                                style="width:45%; min-width:200px;"></video>
-                        </div>
-                    </div>
+          <aside class="col-lg-3">
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
+            <div class="d-flex align-items-center gap-2">
+                <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
+                    <i class="bi bi-camera-video-fill"></i>
+                </button>
+                <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-box mb-2"></div>
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
+            <button class="btn btn-primary">Enviar</button>
+        </div>
+    </div>
+
+    <!-- SOLO ESTE POPUP, nada más -->
+    <div id="videoPopup" class="video-popup" style="display:none;">
+        <div class="video-content">
+            <button id="closePopup" class="btn btn-sm btn-danger mb-2">Cerrar</button>
+            <h5 class="text-center text-primary">Videollamada</h5>
+
+            <div class="video-row">
+                <div class="video-wrapper">
+                    <video id="myVideo" autoplay playsinline muted class="rounded border"></video>
+                    <div id="myNameLabel" class="video-name">Tú</div>
                 </div>
 
-            </aside>
+                <div class="video-wrapper">
+                    <video id="friendVideo" autoplay playsinline class="rounded border"></video>
+                    <div id="friendNameLabel" class="video-name">Amigo</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Pantalla de llamada entrante -->
+    <div id="incomingCall" class="incoming-call-overlay" style="display:none;">
+        <div class="incoming-call-card">
+            <div class="incoming-call-icon">📞</div>
+            <p id="incomingCallerName" class="mb-3 fw-bold">Alguien te está llamando...</p>
+            <div class="d-flex justify-content-center gap-3">
+                <button id="btnAcceptCall" class="btn btn-success">
+                    Aceptar
+                </button>
+                <button id="btnRejectCall" class="btn btn-danger">
+                    Rechazar
+                </button>
+            </div>
+        </div>
+    </div>
+</aside>
+
         </div>
     </div>
 
@@ -212,7 +236,7 @@
                         ${f.Username} <small class="text-muted">Amigo</small>
                     </div>
                     <div>
-                        <button class="btn btn-sm btn-outline-secondary btnMessage">mensaje</button>
+                        <button class="btn btn-sm btn-outline-secondary btnMessage">Mensaje</button>
                     </div>
                 `;
                 friendsList.appendChild(div);
@@ -478,7 +502,7 @@
 </script>
 <script>
     // =========================================================
-    // ⚠️ CONFIGURACIÓN DEL USUARIO ACTUAL
+    // ⚙️ DATOS DEL USUARIO LOGUEADO
     // =========================================================
     const storedUser = JSON.parse(localStorage.getItem('usuario'));
     let currentUser = null;
@@ -492,22 +516,26 @@
         console.warn("No hay usuario logueado, la videollamada se desactivará.");
     }
 
-    // Este se llena cuando haces clic en "mensaje"
+    // targetUserId / targetUserName se llenan cuando abres el chat con un amigo
     window.targetUserId = window.targetUserId || null;
+    window.targetUserName = window.targetUserName || null;
 
     // =========================================================
-    // ⚙️ SOCKET.IO  (USA LA IP DEL SERVIDOR, NO localhost)
+    // ⚙️ SOCKET.IO (usa IP / dominio actual)
     // =========================================================
-    const socket = io("http://192.168.2.193:3000");
-
-    // Variables globales de WebRTC
+    const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
+    //const socket = io("http://192.168.2.193:3000"); 
+    // =========================================================
+    // ⚙️ VARIABLES WEBRTC
+    // =========================================================
     let pc = null;
     let localStream = null;
     let remoteStream = null;
     const pendingIceCandidates = [];
 
-    let inCall = false;            // ¿estoy en llamada?
-    let currentCallPeerId = null;  // con quién estoy en llamada
+    let inCall = false;
+    let currentCallPeerId = null;
+    let pendingOffer = null; // guardamos oferta mientras el usuario acepta
 
     // Servidores STUN
     const rtcConfig = {
@@ -517,20 +545,31 @@
         ]
     };
 
-    // Referencias DOM
+    // =========================================================
+    // 🎥 ELEMENTOS DEL DOM
+    // =========================================================
     const btnVideollamada = document.getElementById("btnVideollamada");
-    const videoPopup       = document.getElementById("videoPopup");
-    const closePopup       = document.getElementById("closePopup");
-    const myVideo          = document.getElementById("myVideo");
-    const friendVideo      = document.getElementById("friendVideo");
+    const videoPopup      = document.getElementById("videoPopup");
+    const closePopup      = document.getElementById("closePopup");
+    const myVideo         = document.getElementById("myVideo");
+    const friendVideo     = document.getElementById("friendVideo");
+
+    const myNameLabel     = document.getElementById("myNameLabel");
+    const friendNameLabel = document.getElementById("friendNameLabel");
+
+    const incomingCallOverlay = document.getElementById("incomingCall");
+    const incomingCallerName  = document.getElementById("incomingCallerName");
+    const btnAcceptCall       = document.getElementById("btnAcceptCall");
+    const btnRejectCall       = document.getElementById("btnRejectCall");
 
     document.addEventListener("DOMContentLoaded", () => {
+        // Si no hay elementos, salimos
         if (!btnVideollamada || !videoPopup || !closePopup || !myVideo || !friendVideo) {
-            console.error("⚠️ Elementos del DOM para videollamada no encontrados.");
+            console.error("⚠️ Elementos de videollamada no encontrados en el DOM.");
             return;
         }
 
-        // Si no hay usuario logueado, bloqueamos
+        // Si no hay usuario logueado → desactivar botón
         if (!currentUser) {
             btnVideollamada.addEventListener("click", () => {
                 alert("Inicia sesión para usar la videollamada.");
@@ -538,41 +577,82 @@
             return;
         }
 
-        // 1. Registrar usuario al conectar
+        // Registramos usuario en el servidor de Socket.IO
         socket.on('connect', () => {
             console.log("🟢 Conectado a Socket.IO:", socket.id);
             socket.emit("registrarUsuario", currentUser.id);
         });
 
-        // 2. Botón de videollamada (SOLO inicia llamada desde uno)
+        // Clic en el botón de videollamada (iniciador)
         btnVideollamada.addEventListener("click", () => {
-            if (window.targetUserId) {
-                startCall(window.targetUserId);
-            } else {
+            if (!window.targetUserId) {
                 alert('Selecciona un amigo para llamar (haz clic en "mensaje" primero).');
+                return;
             }
+            startCall(window.targetUserId, window.targetUserName);
         });
 
-        // 3. Botón cerrar
+        // Colgar la llamada
         closePopup.addEventListener("click", () => {
             endCall(true);
         });
 
-        // 4. Escuchar ofertas / respuestas / ICE
+        // ACEPTAR llamada entrante
+        btnAcceptCall.addEventListener("click", async () => {
+            if (!pendingOffer) return;
+            incomingCallOverlay.style.display = "none";
+            videoPopup.style.display = "flex";
+
+            try {
+                inCall = true;
+                currentCallPeerId = pendingOffer.from;
+
+                // Mostrar nombre de cada uno
+                myNameLabel.textContent     = currentUser.username;
+                friendNameLabel.textContent = pendingOffer.fromName || "Amigo";
+
+                await preparePeer(pendingOffer.from);
+                await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer.sdp));
+
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
+                socket.emit('answer', {
+                    to: pendingOffer.from,
+                    from: currentUser.id,
+                    sdp: answer
+                });
+
+                flushPendingIceCandidates();
+                pendingOffer = null;
+
+            } catch (e) {
+                console.error("❌ Error al aceptar llamada:", e);
+                endCall(false);
+            }
+        });
+
+        // RECHAZAR llamada entrante
+        btnRejectCall.addEventListener("click", () => {
+            pendingOffer = null;
+            currentCallPeerId = null;
+            inCall = false;
+            incomingCallOverlay.style.display = "none";
+            // Opcional: emitir evento 'reject-call'
+        });
+
         setupSocketListeners();
     });
 
-    // ====================================================================
-    // ⚙️ INICIAR LLAMADA (OFERENTE)
-    // ====================================================================
-    async function startCall(targetId) {
-        // Ya estoy en llamada con esta persona
+    // =========================================================
+    // 📞 INICIAR LLAMADA (OFERTANTE)
+    // =========================================================
+    async function startCall(targetId, targetName) {
         if (inCall && currentCallPeerId === targetId) {
             console.log('⚠️ Ya estás en llamada con este usuario.');
             return;
         }
 
-        // Estoy en llamada con otra persona
         if (inCall && currentCallPeerId !== targetId) {
             alert('Ya estás en una llamada, cuelga primero.');
             return;
@@ -582,17 +662,22 @@
         videoPopup.style.display = "flex";
 
         try {
-            currentCallPeerId = targetId;
             inCall = true;
+            currentCallPeerId = targetId;
+
+            // Mostrar nombres
+            myNameLabel.textContent     = currentUser.username;
+            friendNameLabel.textContent = targetName || "Amigo";
 
             await preparePeer(targetId);
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
 
             socket.emit('offer', {
-                to:   targetId,
+                to: targetId,
                 from: currentUser.id,
-                sdp:  offer
+                fromName: currentUser.username,
+                sdp: offer
             });
             console.log('📤 Oferta enviada.');
 
@@ -603,46 +688,41 @@
         }
     }
 
-    // Crear RTCPeerConnection + obtener cámara/micrófono
+    // =========================================================
+    // 🎥 CONFIGURAR RTCPeerConnection
+    // =========================================================
     async function preparePeer(targetId) {
-        if (pc) return; // ya creada
+        if (pc) return;
 
         pc = new RTCPeerConnection(rtcConfig);
 
-        // ICE locales -> se envían al otro usuario
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 socket.emit('ice-candidate', {
-                    to:       targetId,
-                    from:     currentUser.id,
+                    to: targetId,
+                    from: currentUser.id,
                     candidate: event.candidate
                 });
             }
         };
 
-        // Stream remoto
         pc.ontrack = (event) => {
             console.log('✅ Stream remoto recibido.');
             if (friendVideo) friendVideo.srcObject = event.streams[0];
         };
 
-        // Stream local
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             if (myVideo) myVideo.srcObject = localStream;
-
             localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
         } catch (e) {
-            console.error('❌ Error cámara/micrófono:', e);
-            throw new Error('Cámara/micrófono no disponibles. Verifica permisos.');
+            console.error('❌ Error accediendo a cámara/micro:', e);
+            throw new Error('Cámara/micrófono no disponibles. Verifica permisos (HTTPS/localhost).');
         }
     }
 
-    // Aplicar ICE en cola
     async function flushPendingIceCandidates() {
         if (!pc || !pc.remoteDescription || !pendingIceCandidates.length) return;
-
-        console.log(`🚿 Aplicando ${pendingIceCandidates.length} ICE candidates en cola...`);
         const queued = pendingIceCandidates.splice(0, pendingIceCandidates.length);
         for (const c of queued) {
             try {
@@ -653,7 +733,6 @@
         }
     }
 
-    // Terminar llamada
     function endCall(notifyPeer = false) {
         if (notifyPeer && currentCallPeerId) {
             console.log('👋 Fin de llamada (podrías emitir end-call aquí).');
@@ -667,8 +746,9 @@
         remoteStream = null;
         pendingIceCandidates.length = 0;
 
-        if (myVideo)     myVideo.srcObject = null;
+        if (myVideo) myVideo.srcObject = null;
         if (friendVideo) friendVideo.srcObject = null;
+
         videoPopup.style.display = "none";
 
         inCall = false;
@@ -677,80 +757,56 @@
         console.log('📞 Llamada finalizada y recursos limpiados.');
     }
 
-    // ====================================================================
-    // 📩 LISTENERS DE SEÑALIZACIÓN
-    // ====================================================================
+    // =========================================================
+    // 🔁 MANEJO DE EVENTOS SOCKET.IO (OFFER/ANSWER/ICE)
+    // =========================================================
     function setupSocketListeners() {
-
-        // 🔹 Cuando YO recibo una oferta (soy el que contesta)
-        socket.on('offer', async ({ from, sdp }) => {
-            // Ignorar si es mi propia oferta (por si acaso)
+        // Oferta recibida (el que recibe la llamada)
+        socket.on('offer', async ({ from, fromName, sdp }) => {
+            if (!currentUser) return;
             if (from === currentUser.id) return;
 
-            // Ya estoy en llamada con otro distinto
+            // Ya estoy en otra llamada con alguien más
             if (inCall && currentCallPeerId && currentCallPeerId !== from) {
-                console.log('⚠️ Oferta ignorada, ya estoy en otra llamada.');
+                console.log('⚠️ Ya estoy en llamada con otro usuario. Ignoro la oferta.');
                 return;
             }
 
-            console.log(`📥 Oferta recibida de ${from}. Preparando respuesta...`);
-            videoPopup.style.display = "flex";
+            console.log(`📥 Oferta recibida de ${from} (${fromName}).`);
 
-            try {
-                currentCallPeerId = from;
-                inCall = true;
+            // Guardamos la oferta y mostramos pantalla de llamada entrante
+            pendingOffer = { from, fromName, sdp };
+            currentCallPeerId = from;
 
-                await preparePeer(from);
-                await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-
-                socket.emit('answer', {
-                    to:   from,
-                    from: currentUser.id,
-                    sdp:  answer
-                });
-                console.log('📤 Respuesta enviada.');
-
-                flushPendingIceCandidates();
-
-            } catch (e) {
-                console.error('Error al manejar oferta:', e);
-                endCall(false);
-            }
+            incomingCallerName.textContent = `📞 ${fromName || 'Alguien'} te está llamando...`;
+            incomingCallOverlay.style.display = "flex";
         });
 
-        // 🔹 Cuando YO inicié la llamada y recibo la respuesta
+        // Respuesta recibida (el que inició la llamada)
         socket.on('answer', async ({ from, sdp }) => {
-            if (!pc || from !== currentCallPeerId) {
-                console.log('⚠️ Respuesta ignorada: no coincide con currentCallPeerId.');
+            if (!pc || !currentCallPeerId || from !== currentCallPeerId) {
+                console.log('⚠️ Respuesta ignorada (no coincide con la llamada actual).');
                 return;
             }
 
-            console.log(`📥 Respuesta recibida de ${from}. Estableciendo conexión...`);
+            console.log(`📥 Respuesta recibida de ${from}.`);
             try {
                 await pc.setRemoteDescription(new RTCSessionDescription(sdp));
                 flushPendingIceCandidates();
-                console.log('🎉 Conexión P2P lista (offer + answer).');
+                console.log('🎉 Conexión P2P establecida (answer).');
             } catch (e) {
                 console.error('Error al procesar respuesta:', e);
             }
         });
 
-        // 🔹 ICE candidates (para ambos)
-        socket.on('ice-candidate', ({ from, candidate }) => {
-            if (!candidate) return;
+        // ICE Candidates
+        socket.on('ice-candidate', async ({ from, candidate }) => {
             if (!currentCallPeerId || from !== currentCallPeerId) {
-                console.log('⚠️ ICE candidate ignorado: no coincide con currentCallPeerId.');
+                console.log('⚠️ ICE candidate ignorado (no coincide con la llamada actual).');
                 return;
             }
 
-            console.log(`📥 ICE Candidate recibido de ${from}.`);
-            addIceCandidateOrQueue(candidate);
-        });
-
-        async function addIceCandidateOrQueue(candidate) {
+            if (!candidate) return;
             if (pc && pc.remoteDescription && pc.remoteDescription.type) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -760,9 +816,10 @@
             } else {
                 pendingIceCandidates.push(candidate);
             }
-        }
+        });
     }
 </script>
+
 
 
 
