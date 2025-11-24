@@ -77,15 +77,16 @@
             <section class="col-12 col-md-8 col-lg-9 chat-main">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center py-2">
-                        <div>
-                            <div class="chat-header-title" id="currentGroupName">
-                                Selecciona un grupo
-                            </div>
-                            <div class="chat-header-subtitle text-muted" id="currentGroupMembers">
-                                No hay grupo seleccionado
-                            </div>
-                        </div>
-                    </div>
+    <div>
+        <div class="chat-header-title" id="currentGroupName">Selecciona un grupo</div>
+        <div class="chat-header-subtitle text-muted" id="currentGroupMembers">No hay grupo seleccionado</div>
+    </div>
+
+    <!-- 🔸 Botón Asignar Tarea -->
+    <button id="btnAsignarTarea" class="btn btn-warning btn-sm text-white"  style="display:none;">
+        <i class="bi bi-clipboard-check"></i> Asignar tarea
+    </button>
+</div>
 
                     <div id="groupMessages" class="messages-container">
                         <p class="text-muted text-center mt-5">
@@ -105,6 +106,35 @@
                 </div>
             </section>
         </div>
+
+<!-- 📌 MODAL PARA CREAR Y ASIGNAR TAREA AL GRUPO -->
+<div class="modal fade" id="modalAsignarTarea" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title">Asignar tarea al grupo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label">Descripción de la tarea</label>
+        <input type="text" id="tareaDescripcion" class="form-control mb-3" placeholder="Ej. Realizar una predicción">
+
+        <label class="form-label">Puntos que otorgará</label>
+        <input type="number" id="tareaPuntos" class="form-control" value="10" min="5" max="100">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" onclick="crearTareaGrupo()">Crear y asignar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
     </main>
 
 
@@ -116,7 +146,7 @@
         // Conexión con Socket.IO (mismo host, puerto 3000)
 const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
 
-const BASE_API_URL = 'http://192.168.2.193/api';
+const BASE_API_URL = 'http://192.168.1.120/api';
         // ******************************************************
 
         const createGroupBtn = document.getElementById('createGroupBtn');
@@ -285,6 +315,14 @@ const BASE_API_URL = 'http://192.168.2.193/api';
     currentGroupId = idGrupo;
     currentGroupNameEl.textContent = nombreGrupo;
     currentGroupMembersEl.textContent = miembrosTexto || 'Integrantes no disponibles';
+   document.getElementById('btnAsignarTarea').style.display = 'inline-block';
+   document.getElementById('btnAsignarTarea').addEventListener('click', function () {
+    if (!currentGroupId) {
+        alert("Primero selecciona un grupo.");
+        return;
+    }
+    document.getElementById('btnAsignarTarea').onclick = abrirModalCrearTarea;
+});
 
     // 🔵 Unirse a la sala Socket.IO de este grupo
     socket.emit('joinGrupo', { ID_GRUPO: idGrupo });
@@ -301,6 +339,13 @@ const BASE_API_URL = 'http://192.168.2.193/api';
         groupMessagesDiv.innerHTML = '<p class="text-danger small text-center mt-3">Error al cargar mensajes.</p>';
     }
 }
+
+// Función para abrir el modal (asegúrate de que el modal tenga el ID correcto)
+function abrirModalCrearTarea() {
+  const modal = new bootstrap.Modal(document.getElementById('modalAsignarTarea'));
+  modal.show();
+}
+
 
 
         function renderMensajesGrupo(mensajes) {
@@ -409,6 +454,34 @@ socket.on('recibirMensajeGrupo', (m) => {
     groupMessagesDiv.appendChild(bubble);
     groupMessagesDiv.scrollTop = groupMessagesDiv.scrollHeight;
 });
+async function crearTareaGrupo() {
+    const descripcion = document.getElementById('tareaDescripcion').value;
+    const puntos = document.getElementById('tareaPuntos').value;
+
+    if (!descripcion || !currentGroupId) {
+        alert("Falta descripción o no hay grupo seleccionado");
+        return;
+    }
+
+    const response = await fetch(`${BASE_API_URL}/tareas/crear_tarea.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id_grupo: currentGroupId,
+            creador_id: user.ID_USUARIO,
+            descripcion: descripcion,
+            puntos: puntos
+        })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+        alert("Tarea asignada correctamente al grupo");
+        bootstrap.Modal.getInstance(document.getElementById('modalAsignarTarea')).hide();
+    } else {
+        alert("Error al asignar tarea");
+    }
+}
 
 
     </script>
