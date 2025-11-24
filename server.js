@@ -12,7 +12,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost',        // Frontend en XAMPP
   'http://localhost:3000',   // Por si usas React o Node frontend
-  'http://127.0.0.1',        // Otro localhost válido
+  'http://127.0.0.1', 
+   "http://192.168.2.193:3000"     // Otro localhost válido
 ];
 
 

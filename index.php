@@ -135,7 +135,8 @@
         // ******************************************************
         // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
         // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-    const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
+    //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; para host solo
+    const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
         // ******************************************************
 
         // Manejo de usuario logueado / cierre de sesión
@@ -482,7 +483,8 @@ function addMessageToUI(text, sent = false) {
     // =========================================================
     // ⚙️ SOCKET.IO
     // =========================================================
-    const socket = io("http://localhost:3000"); // Servidor Node con Socket.IO
+    //const socket = io("http://localhost:3000"); // Servidor Node con Socket.IO
+    const socket = io("http://192.168.2.193:3000");
 
     // Variables globales de WebRTC
     let pc = null;

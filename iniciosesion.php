@@ -30,6 +30,8 @@
             // ******************************************************
             // CONSTANTE DE BASE URL LOCAL
             // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
+           //const BASE_API_URL = 'http://localhost/OR-INTERNET/api';
+          const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
            
 
             // ******************************************************
