@@ -63,6 +63,28 @@
          </div>
          </div>
 
+         <div class="card shadow-sm mt-4">
+  <div class="card-header bg-warning text-white">
+      <h5 class="m-0">🏆 Ranking de Usuarios</h5>
+  </div>
+  <div class="card-body">
+      <table class="table table-striped">
+          <thead>
+              <tr>
+                  <th>#</th>
+                  <th>Usuario</th>
+                  <th>Puntos</th>
+              </tr>
+          </thead>
+          <tbody id="rankingTableBody">
+              <!-- Rellenado con JS -->
+          </tbody>
+      </table>
+  </div>
+</div>
+
+<br>
+
       <!-- 🟠 CARD DE RECOMPENSAS -->
          <div class="card shadow-sm">
           <div class="card-header bg-success text-white">
@@ -122,7 +144,11 @@ async function loadMetas(userId) {
                 <span class="badge bg-primary me-2">+${meta.puntos} pts</span>
                 ${
                   meta.completada == 0 
-                  ? `<button class="btn btn-success btn-sm" onclick="completarMeta(${meta.id_usuario_tarea})">Completar</button>`
+                  ? `<button class="btn btn-success btn-sm" 
+                         onclick="completarMeta(${meta.id_usuario_tarea}, '${meta.descripcion}')">
+                         Completar
+                        </button>
+                        `
                   : `<i class="bi bi-check-circle-fill text-success"></i>`
                 }
             </div>
@@ -130,24 +156,31 @@ async function loadMetas(userId) {
     });
 }
 
-async function completarMeta(id_usuario_tarea) {
-    if (!confirm("¿Marcar esta tarea como completada?")) return;
+async function completarMeta(id_usuario_tarea, descripcion) {
+    if (!confirm("¿Deseas validar esta tarea?")) return;
 
-    const res = await fetch(`${BASE_API_URL}/completar_meta.php`, {
+    const user = JSON.parse(localStorage.getItem('usuario'));
+
+    const res = await fetch(`${BASE_API_URL}/verificar_meta.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_usuario_tarea: id_usuario_tarea })
+        body: JSON.stringify({ 
+            id_usuario_tarea: id_usuario_tarea,
+            id_usuario: user.ID_USUARIO,
+            descripcion: descripcion
+        })
     });
 
     const data = await res.json();
 
     if (data.success) {
-        alert("🎉 ¡Tarea completada!");
-        loadMetas(JSON.parse(localStorage.getItem('usuario')).ID_USUARIO);
+        alert("🎉 ¡Felicidades! Tarea validada y completada.");
+        loadMetas(user.ID_USUARIO);
     } else {
-        alert("Error al completar tarea");
+        alert("⛔ No has cumplido esta tarea todavía.");
     }
 }
+
 
 
 
