@@ -10,9 +10,11 @@ const app = express();
 
 // ------------------ CORS ------------------
 const allowedOrigins = [
-  'https://or-internet.onrender.com',
-  'http://localhost:3000',
+  'http://localhost',        // Frontend en XAMPP
+  'http://localhost:3000',   // Por si usas React o Node frontend
+  'http://127.0.0.1',        // Otro localhost válido
 ];
+
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -27,7 +29,7 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://or-internet.onrender.com');
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
@@ -294,26 +296,64 @@ app.get('/grupo/:grupoId/mensajes', (req, res) => {
 // ------------------ SOCKET.IO ------------------
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: ['https://or-internet.onrender.com'], methods: ['GET', 'POST'] },
+  cors: { 
+    origin: ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'],
+    methods: ['GET', 'POST']
+  },
 });
 
+
 const usuariosConectados = {};
-io.on('connection', (socket) => {
-  socket.on('registrarUsuario', (userId) => {
+
+io.on("connection", (socket) => {
+  console.log("🟢 Usuario conectado:", socket.id);
+
+  // Registrar usuario
+  socket.on("registrarUsuario", (userId) => {
     usuariosConectados[userId] = socket.id;
-    console.log(`👤 Usuario ${userId} conectado`);
+    console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
   });
 
-  socket.on('mensajePrivado', ({ de, para, texto }) => {
+  // 🔹 Señal WebRTC
+  socket.on("signal", ({ to, from, data }) => {
+    const destino = usuariosConectados[to];
+    if (destino) {
+      io.to(destino).emit("signal", { from, data });
+    }
+  });
+
+  // 🔹 Oferta WebRTC
+  socket.on("offer", (offer) => {
+    socket.broadcast.emit("offer", offer);
+  });
+
+  // 🔹 Respuesta WebRTC
+  socket.on("answer", (answer) => {
+    socket.broadcast.emit("answer", answer);
+  });
+
+  // 🔹 ICE Candidates
+  socket.on("ice-candidate", (candidate) => {
+    socket.broadcast.emit("ice-candidate", candidate);
+  });
+
+  // 🔹 Chat privado
+  socket.on("mensajePrivado", ({ de, para, texto }) => {
     console.log(`📨 Mensaje de ${de} para ${para}: ${texto}`);
     const destino = usuariosConectados[para];
-    if (destino) io.to(destino).emit('recibirMensaje', { de, texto });
+    if (destino) {
+      io.to(destino).emit("recibirMensaje", { de, texto });
+    }
   });
 
-  socket.on('disconnect', () => {
-    for (const [id, sid] of Object.entries(usuariosConectados))
-      if (sid === socket.id) delete usuariosConectados[id];
-    console.log('🔴 Usuario desconectado:', socket.id);
+  // 🔚 Cuando se desconecta
+  socket.on("disconnect", () => {
+    for (const [id, sid] of Object.entries(usuariosConectados)) {
+      if (sid === socket.id) {
+        delete usuariosConectados[id];
+        console.log(`🚫 Usuario ${id} desconectado`);
+      }
+    }
   });
 });
 

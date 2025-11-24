@@ -95,24 +95,21 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="fw-bold m-0" id="chatTitle">Chat</h6>
                         <div class="d-flex align-items-center gap-2">
-                            <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
-                                <i class="bi bi-camera-video-fill"></i>
-                            </button>
-
+                        
+                          <button id="btnVideollamada" class="btn btn-outline-primary btn-sm rounded-circle">
+    <i class="bi bi-camera-video-fill"></i>
+</button>
                             <button id="btnOpcionesChat" class="btn btn-outline-success btn-sm rounded-circle">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
                     </div>
-
                     <div class="chat-box mb-2"></div>
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
                         <button class="btn btn-primary">Enviar</button>
                     </div>
                 </div>
-
-
                 <div id="videoPopup" class="video-popup" style="display:none;">
                     <div class="video-content">
                         <button id="closePopup" class="btn btn-sm btn-danger mb-2">Cerrar</button>
@@ -138,33 +135,8 @@
         // ******************************************************
         // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
         // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
-       const BASE_API_URL = 'http://localhost/OR_INTERNET/api'; 
+       const BASE_API_URL = 'http://192.168.1.120/OR_INTERNET/api'; 
         // ******************************************************
-
-
-        // Videollamada
-        const btnVideollamada = document.getElementById("btnVideollamada");
-        const videoPopup = document.getElementById("videoPopup");
-        const closePopup = document.getElementById("closePopup");
-        const myVideo = document.getElementById("myVideo");
-
-        btnVideollamada.addEventListener("click", async () => {
-            videoPopup.style.display = "flex";
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                myVideo.srcObject = stream;
-            } catch (err) {
-                alert("No se pudo acceder a la cámara/micrófono: " + err);
-            }
-        });
-
-        closePopup.addEventListener("click", () => {
-            videoPopup.style.display = "none";
-            if (myVideo.srcObject) {
-                myVideo.srcObject.getTracks().forEach(track => track.stop());
-            }
-            myVideo.srcObject = null;
-        });
 
         // Manejo de usuario logueado / cierre de sesión
         document.addEventListener("DOMContentLoaded", async () => {
@@ -373,7 +345,53 @@
         
     </script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-   
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("🔥 Página cargada, iniciando videollamada básica");
+
+    // 🔹 Referencias correctas a los elementos
+    const btnVideollamada = document.getElementById("btnVideollamada");
+    const videoPopup = document.getElementById("videoPopup");
+    const closePopup = document.getElementById("closePopup");
+    const myVideo = document.getElementById("myVideo");
+    const friendVideo = document.getElementById("friendVideo");
+
+    if (!btnVideollamada || !videoPopup || !closePopup || !myVideo) {
+        console.error("⚠️ Alguno de los elementos de videollamada NO existe en el HTML");
+        return;
+    }
+
+    console.log("🎯 Elementos encontrados correctamente");
+
+    // 🟢 ABRIR POPUP Y MOSTRAR MI CÁMARA
+    btnVideollamada.addEventListener("click", async () => {
+        console.log("🎥 Clic en botón de videollamada");
+        videoPopup.style.display = "flex";
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            myVideo.srcObject = stream;
+        } catch (err) {
+            console.error("❌ No se pudo acceder a cámara/micrófono", err);
+            alert("Error al acceder a la cámara: " + err.message);
+        }
+    });
+
+    // 🔴 CERRAR POPUP Y APAGAR CÁMARA
+    closePopup.addEventListener("click", () => {
+        videoPopup.style.display = "none";
+        if (myVideo.srcObject) {
+            myVideo.srcObject.getTracks().forEach(track => track.stop());
+            myVideo.srcObject = null;
+        }
+    });
+});
+</script>
+
+
    <script>
    document.addEventListener('DOMContentLoaded', () => {
     const partido = JSON.parse(localStorage.getItem("partidoSeleccionado"));
@@ -441,6 +459,8 @@
         });
     }
 
+
+    
     loadLiveMatch();
 </script>
 

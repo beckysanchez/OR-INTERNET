@@ -54,7 +54,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-        const BASE_API_URL = 'http://localhost/sociomatch/api';
+        const BASE_API_URL = 'http://192.168.1.120/OR_INTERNET/api';
         // ******************************************************
 
         document.addEventListener('DOMContentLoaded', () => {

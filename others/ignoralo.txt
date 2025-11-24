@@ -205,3 +205,126 @@ index innerHTML
             </aside>
         </div>
     </div>
+
+       <script>
+    
+
+        // Videollamada
+        const btnVideollamada = document.getElementById("btnVideollamada");
+        const videoPopup = document.getElementById("videoPopup");
+        const closePopup = document.getElementById("closePopup");
+        const myVideo = document.getElementById("myVideo");
+    // =============== CONFIGURACIÓN DE SOCKET & VIDEOLLAMADA ==================
+const socket = io("http://localhost:3000");
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnVideollamada = document.getElementById("btnVideollamada");
+    const videoPopup = document.getElementById("videoPopup");
+    const closePopup = document.getElementById("closePopup");
+
+    // 🟢 ABRIR POPUP
+    btnVideollamada.addEventListener("click", () => {
+        console.log("Botón de videollamada clickeado"); // DEBUG
+        videoPopup.style.display = "flex";
+    });
+
+    // 🔴 CERRAR POPUP
+    closePopup.addEventListener("click", () => {
+        console.log("Cerrando videollamada");
+        videoPopup.style.display = "none";
+    });
+});
+
+
+// Variables importantes
+let localStream;
+let peerConnection;
+const config = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" } // Servidor STUN gratuito de Google
+    ]
+};
+
+const myVideo = document.getElementById("myVideo");
+const friendVideo = document.getElementById("friendVideo");
+
+// 📌 Cuando hago clic en "Videollamada"
+btnVideollamada.addEventListener("click", async () => {
+    videoPopup.style.display = "flex";
+    
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    myVideo.srcObject = localStream;
+
+    startCall(); // ⬅️ iniciamos llamada real
+});
+
+// 📌 Cerrar videollamada
+closePopup.addEventListener("click", () => {
+    videoPopup.style.display = "none";
+    if (localStream) localStream.getTracks().forEach(track => track.stop());
+    if (peerConnection) peerConnection.close();
+});
+
+// 🛠️ INICIAR LLAMADA
+function startCall() {
+    peerConnection = new RTCPeerConnection(config);
+
+    // Agregar nuestra cámara/micro al peer
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    // Cuando recibamos video remoto, se muestra
+    peerConnection.ontrack = (event) => {
+        friendVideo.srcObject = event.streams[0];
+    };
+
+    // Cuando haya datos de conexión, los mandamos al otro usuario vía socket
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            socket.emit("ice-candidate", event.candidate);
+        }
+    };
+
+    // Creamos la oferta y la mandamos
+    peerConnection.createOffer().then(offer => {
+        peerConnection.setLocalDescription(offer);
+        socket.emit("offer", offer);
+    });
+}
+
+// 🎧 Si recibimos una oferta
+socket.on("offer", async (offer) => {
+    peerConnection = new RTCPeerConnection(config);
+
+    localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+    });
+
+    peerConnection.ontrack = (event) => {
+        friendVideo.srcObject = event.streams[0];
+    };
+
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            socket.emit("ice-candidate", event.candidate);
+        }
+    };
+
+    await peerConnection.setRemoteDescription(offer);
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit("answer", answer);
+});
+
+// 🎧 Si recibimos respuesta (answer)
+socket.on("answer", (answer) => {
+    peerConnection.setRemoteDescription(answer);
+});
+
+// 🎧 Si recibimos ICE candidates
+socket.on("ice-candidate", (candidate) => {
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+    </script>
