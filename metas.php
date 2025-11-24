@@ -25,10 +25,9 @@
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="points-badge">
-                    ⭐ <span id="userPoints">120</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
+            <img id="userProfilePic" src="" alt="perfil" class="rounded-circle"
+    style="width:40px; height:40px; object-fit:cover;">
+
 
             </div>
         </div>
@@ -227,15 +226,48 @@ async function loadRecompensas() {
             <img src="${r.imagen_url}" alt="${r.nombre}">
             <h6 class="mt-2">${r.nombre}</h6>
             <p class="text-muted small">Costo: ${r.costo} pts</p>
-            <button class="btn btn-sm btn-success" onclick="canjear(${r.id})">Canjear</button>
+            <button class="btn btn-sm btn-success" onclick="canjear(${r.id_recompensa})">Canjear</button>
           </div>
         </div>`;
     });
 }
 
-function canjear(rewardId) {
-    alert(`Intentando canjear recompensa ID: ${rewardId}`);
+async function canjear(id_recompensa) {
+    const user = JSON.parse(localStorage.getItem('usuario'));
+
+    const res = await fetch(`${BASE_API_URL}/canjear.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id_usuario: user.ID_USUARIO,
+            id_recompensa: id_recompensa
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.status === "saldo_insuficiente") {
+        alert("⛔ No tienes suficientes puntos");
+    } 
+    else if (data.status === "ok") {
+        alert("🎉 Imagen aplicada como foto de perfil");
+
+        // Actualizar datos del usuario
+        user.foto_perfil = data.nueva_foto;
+        user.puntos = data.nuevos_puntos;
+        localStorage.setItem('usuario', JSON.stringify(user));
+
+        document.getElementById("userPoints").textContent = data.nuevos_puntos;
+        document.querySelector("header img").src = data.nueva_foto;
+
+        // Recargar recompensas
+        loadRecompensas();
+    } 
+    else {
+        alert("❌ Error procesando la solicitud.");
+    }
 }
+
 
 
      

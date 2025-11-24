@@ -25,11 +25,9 @@
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">120</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
+              <img id="userProfilePic" src="" alt="perfil" class="rounded-circle"
+    style="width:40px; height:40px; object-fit:cover;">
+
 
             </div>
         </div>
@@ -121,7 +119,6 @@
         const selectedMatchText = document.getElementById('selectedMatch');
         const selectedMatchIdInput = document.getElementById('selectedMatchId');
         const submitPrediction = document.getElementById('submitPrediction');
-        const userPointsElement = document.getElementById('userPoints');
         const homeTeamLabel = document.getElementById('homeTeam');
         const awayTeamLabel = document.getElementById('awayTeam');
         const pastResults = document.getElementById('pastResults');
@@ -135,8 +132,7 @@
                 return;
             }
             
-            // Actualizar puntos y perfil del usuario
-            userPointsElement.textContent = user.puntos || 0;
+          
             // ... (Lógica para actualizar la imagen de perfil)
             
             // Implementación futura: cargar partidos y resultados pasados desde la BD

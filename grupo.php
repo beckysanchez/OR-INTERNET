@@ -23,11 +23,9 @@
                 </nav>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">0</span>
-                </div>
-                <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;">
+               <img id="userProfilePic" src="" alt="perfil" class="rounded-circle"
+    style="width:40px; height:40px; object-fit:cover;">
+
             </div>
         </div>
     </header>
@@ -177,7 +175,7 @@ const BASE_API_URL = 'http://192.168.1.120/api';
     }
 
     const userId = user.ID_USUARIO || user.id_usuario;
-    document.getElementById('userPoints').textContent = user.puntos || 0;
+
 
     // Registrar usuario en socket (ya lo usas en index.php)
     socket.on('connect', () => {

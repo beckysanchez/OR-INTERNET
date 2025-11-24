@@ -28,11 +28,9 @@
                 <input type="text" class="form-control form-control-sm d-none d-sm-block" style="width:200px;"
                     placeholder="Buscar...">
 
-                <div class="points-badge">
-                    ⭐ <span id="userPoints">0</span>
-                </div>
+            <img id="userProfilePic" src="" alt="perfil" class="rounded-circle"
+    style="width:40px; height:40px; object-fit:cover;">
 
-               <img id="profileImg" class="rounded-circle" width="40" height="40">
 
 
                 <button id="btnCerrarSesion" class="btn btn-outline-danger btn-sm" style="display:none;">
@@ -45,17 +43,7 @@
     <div class="container-fluid mt-4">
         <div class="row">
               <aside class="col-lg-2 d-none d-lg-block sidebar">
-            <div class="card p-3">
-                <h6 class="fw-bold">Metas Diarias</h6>
-                <ul id="metasList" class="list-unstyled small">
-                    <li>✔️ Predecir 1 partido</li>
-                    <li>⬜ Agregar 1 amigo</li>
-                    <li>⬜ Ganar 20 puntos</li>
-                </ul>
-                <a href="metas.php" class="btn btn-sm btn-outline-success mt-2">Ver más</a>
-            </div>
-
-            <hr>
+    
 
             <div class="card mt-3 p-2">
                 <h6 class="fw-bold">Mis Amigos</h6>
@@ -189,14 +177,14 @@
     document.addEventListener("DOMContentLoaded", async () => {
         user = JSON.parse(localStorage.getItem('usuario'));
 
-        const userPoints = document.getElementById('userPoints');
+        
         const profileImg = document.getElementById('profileImg');
         const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
         const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
         if (user) {
-            userPoints.textContent = user.puntos || 0;
+          
             profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
 
             if (loginBtn) loginBtn.remove();
@@ -204,7 +192,7 @@
 
             btnCerrarSesion.style.display = 'inline-block';
         } else {
-            userPoints.textContent = 0;
+           
             profileImg.src = 'img/usuario-generico.png';
             btnCerrarSesion.style.display = 'none';
         }
