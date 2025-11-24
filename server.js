@@ -313,13 +313,26 @@ const usuariosConectados = {}; // { userId: socketId }
 
 io.on('connection', (socket) => {
   console.log('🟢 Usuario conectado:', socket.id);
-
+  
   // ===========================================
   // 1) REGISTRO DE USUARIO
   // ===========================================
   socket.on('registrarUsuario', (userId) => {
     usuariosConectados[userId] = socket.id;
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
+
+    // Marcar en la base de datos como online
+    const sqlOnline = `
+      INSERT INTO estado_usuario (id_usuario, online)
+      VALUES (?, 1)
+      ON DUPLICATE KEY UPDATE online=1, ultima_actualizacion=NOW()
+    `;
+    db.query(sqlOnline, [userId], (err) => {
+      if (err) console.error('❌ Error al actualizar estado online:', err);
+    });
+
+    // Notificar a todos los demás que este usuario está online
+    socket.broadcast.emit('usuarioOnline', { id_usuario: userId });
   });
 
 
@@ -444,11 +457,24 @@ io.on('connection', (socket) => {
   // ===========================================
   // 5) DESCONECTAR USUARIO
   // ===========================================
-  socket.on('disconnect', () => {
+socket.on('disconnect', () => {
     for (const [id, sid] of Object.entries(usuariosConectados)) {
       if (sid === socket.id) {
         delete usuariosConectados[id];
+
+        // Marcar en la base de datos como offline
+        db.query(
+          `UPDATE estado_usuario SET online=0, ultima_actualizacion=NOW() WHERE id_usuario=?`,
+          [id],
+          (err) => {
+            if (err) console.error('❌ Error al actualizar estado offline:', err);
+          }
+        );
+
         console.log(`🚫 Usuario ${id} desconectado`);
+
+        // Notificar a todos los demás que este usuario está offline
+        socket.broadcast.emit('usuarioOffline', { id_usuario: id });
       }
     }
   });
