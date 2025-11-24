@@ -31,6 +31,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Si algún día quieres subir archivos desde Node, esto te sirve.
+// Por ahora solo lo usamos en /registro (aunque la BD ya no tiene img_p).
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -41,18 +43,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'registro.html'));
 });
 
-// Registro de usuario
+// ==================== AUTH ====================
+
+// Registro de usuario (usa tabla USUARIO sin img_p)
 app.post('/registro', upload.single('img_p'), (req, res) => {
   const nombre = req.body.NOMBRE;
-  const correo = req.body.CORREO.trim().toLowerCase();
-  const Username = req.body.Username.trim().toLowerCase();
+  const correo = req.body.CORREO?.trim().toLowerCase();
+  const Username = req.body.Username?.trim().toLowerCase();
   const contraseña = req.body.CONTRA;
-  const imagen = req.file ? req.file.buffer.toString('base64') : null;
 
-  if (!nombre || !correo || !contraseña || !Username)
+  if (!nombre || !correo || !contraseña || !Username) {
     return res.status(400).json({ msg: 'Faltan datos' });
+  }
 
-  const checkSql = 'SELECT * FROM usuario WHERE CORREO = ? OR Username = ?';
+  const checkSql = 'SELECT * FROM USUARIO WHERE CORREO = ? OR Username = ?';
   db.query(checkSql, [correo, Username], (err, result) => {
     if (err) {
       console.error('❌ Error al verificar duplicados:', err);
@@ -70,10 +74,10 @@ app.post('/registro', upload.single('img_p'), (req, res) => {
     }
 
     const insertSql = `
-      INSERT INTO usuario (NOMBRE, CORREO, CONTRA, Username, puntos, img_p)
-      VALUES (?, ?, ?, ?, 10, ?)
+      INSERT INTO USUARIO (NOMBRE, CORREO, CONTRA, Username, puntos)
+      VALUES (?, ?, ?, ?, 10)
     `;
-    db.query(insertSql, [nombre, correo, contraseña, Username, imagen], (err2, result2) => {
+    db.query(insertSql, [nombre, correo, contraseña, Username], (err2, result2) => {
       if (err2) {
         if (err2.code === 'ER_DUP_ENTRY')
           return res.status(409).json({ msg: 'Correo o usuario ya existen' });
@@ -95,7 +99,7 @@ app.post('/login', (req, res) => {
   if (!correo || !contraseña)
     return res.status(400).json({ msg: 'Faltan datos' });
 
-  const sql = 'SELECT * FROM usuario WHERE CORREO = ? AND CONTRA = ?';
+  const sql = 'SELECT * FROM USUARIO WHERE CORREO = ? AND CONTRA = ?';
   db.query(sql, [correo, contraseña], (err, result) => {
     if (err) {
       console.error('❌ Error al consultar:', err);
@@ -109,21 +113,22 @@ app.post('/login', (req, res) => {
     res.json({
       msg: 'Login exitoso',
       user: {
-        id: u.ID_USUARIO,
+        ID_USUARIO: u.ID_USUARIO,
         NOMBRE: u.NOMBRE,
         CORREO: u.CORREO,
         Username: u.Username,
         puntos: u.puntos,
-        img_p: u.img_p,
       },
     });
   });
 });
 
+// ==================== USUARIOS / AMIGOS ====================
+
 // Buscar usuarios para agregar amigos
 app.get('/usuarios', (req, res) => {
   const q = req.query.q || '';
-  const sql = 'SELECT ID_USUARIO, Username, img_p, puntos FROM usuario WHERE Username LIKE ?';
+  const sql = 'SELECT ID_USUARIO, Username, puntos FROM USUARIO WHERE Username LIKE ?';
 
   db.query(sql, [`%${q}%`], (err, result) => {
     if (err) {
@@ -134,7 +139,7 @@ app.get('/usuarios', (req, res) => {
   });
 });
 
-// Agregar amigo
+// Agregar amigo (usa tabla AMIGOS)
 app.post('/agregar-amigo', (req, res) => {
   const { usuario_id, amigo_id } = req.body;
 
@@ -143,7 +148,7 @@ app.post('/agregar-amigo', (req, res) => {
   }
 
   const sql = `
-    INSERT INTO amistad (ID_USUARIO1, ID_USUARIO2, FECHA_AMISTAD)
+    INSERT INTO AMIGOS (ID_USUARIO1, ID_USUARIO2, FECHA_AMISTAD)
     VALUES (?, ?, NOW())
   `;
 
@@ -165,9 +170,9 @@ app.post('/agregar-amigo', (req, res) => {
 app.get('/amigos/:userId', (req, res) => {
   const { userId } = req.params;
   const sql = `
-    SELECT u.ID_USUARIO, u.Username, u.img_p, u.puntos
-    FROM amigos a
-    JOIN usuario u ON u.ID_USUARIO = a.ID_USUARIO2
+    SELECT u.ID_USUARIO, u.Username, u.puntos
+    FROM AMIGOS a
+    JOIN USUARIO u ON u.ID_USUARIO = a.ID_USUARIO2
     WHERE a.ID_USUARIO1 = ?
   `;
 
@@ -190,7 +195,7 @@ app.post('/crear-grupo', (req, res) => {
     return res.status(400).json({ msg: 'Faltan datos para crear grupo' });
   }
 
-  const insertGrupo = 'INSERT INTO grupo (NOMBRE) VALUES (?)';
+  const insertGrupo = 'INSERT INTO GRUPO (NOMBRE) VALUES (?)';
   db.query(insertGrupo, [nombre], (err, result) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
@@ -204,7 +209,7 @@ app.post('/crear-grupo', (req, res) => {
     const todosMiembros = [...miembros, creador_id];
     const values = todosMiembros.map(id => [grupoId, id]);
 
-    const insertMiembros = 'INSERT INTO grupo_miembros (ID_GRUPO, ID_USUARIO) VALUES ?';
+    const insertMiembros = 'INSERT INTO GRUPO_MIEMBROS (ID_GRUPO, ID_USUARIO) VALUES ?';
     db.query(insertMiembros, [values], (err2) => {
       if (err2) {
         console.error('❌ Error al agregar miembros:', err2);
@@ -222,8 +227,8 @@ app.get('/grupos/:userId', (req, res) => {
   const { userId } = req.params;
   const sql = `
     SELECT g.ID_GRUPO, g.NOMBRE, g.FECHA_CREACION
-    FROM grupo g
-    JOIN grupo_miembros gm ON g.ID_GRURO = gm.ID_GRUPO
+    FROM GRUPO g
+    JOIN GRUPO_MIEMBROS gm ON g.ID_GRUPO = gm.ID_GRUPO
     WHERE gm.ID_USUARIO = ?
   `;
   db.query(sql, [userId], (err, result) => {
@@ -235,22 +240,31 @@ app.get('/grupos/:userId', (req, res) => {
   });
 });
 
-// Mensajes de grupo
+// Mensajes de grupo (por ahora solo texto, pero tabla ya admite archivos)
 app.post('/grupo/:grupoId/mensaje', (req, res) => {
   const { grupoId } = req.params;
-  const { emisorId, mensaje } = req.body;
+  const { emisorId, mensaje, tipo, archivo_url, archivo_mime, archivo_nombre } = req.body;
 
-  if (!grupoId || !emisorId || !mensaje) {
+  if (!grupoId || !emisorId || (!mensaje && !archivo_url)) {
     return res.status(400).json({ msg: 'Faltan datos para enviar mensaje' });
   }
 
   const sql = `
-    INSERT INTO mensaje_grupo (ID_GRUPO, ID_EMISOR, MENSAJE)
-    VALUES (?, ?, ?)
+    INSERT INTO MENSAJE_GRUPO 
+    (ID_GRUPO, ID_EMISOR, MENSAJE, TIPO, ARCHIVO_URL, ARCHIVO_MIME, ARCHIVO_NOMBRE_ORIGINAL)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
-  db.query(sql, [grupoId, emisorId, mensaje], (err, result) => {
+  db.query(sql, [
+    grupoId,
+    emisorId,
+    mensaje || null,
+    tipo || 'texto',
+    archivo_url || null,
+    archivo_mime || null,
+    archivo_nombre || null
+  ], (err, result) => {
     if (err) {
-      console.error('❌ Error al guardar mensaje:', err);
+      console.error('❌ Error al guardar mensaje de grupo:', err);
       return res.status(500).json({ msg: 'Error al guardar mensaje' });
     }
     res.json({ msg: 'Mensaje enviado', idMensaje: result.insertId });
@@ -262,15 +276,23 @@ app.get('/grupo/:grupoId/mensajes', (req, res) => {
   const { grupoId } = req.params;
 
   const sql = `
-    SELECT m.ID_MENSAJE, m.MENSAJE, m.FECHA_ENVIO, u.Username AS autor
-    FROM mensaje_grupo m
-    JOIN usuario u ON m.ID_EMISOR = u.ID_USUARIO
+    SELECT 
+      m.ID_MENSAJE, 
+      m.MENSAJE, 
+      m.TIPO,
+      m.ARCHIVO_URL,
+      m.ARCHIVO_MIME,
+      m.ARCHIVO_NOMBRE_ORIGINAL,
+      m.FECHA_ENVIO, 
+      u.Username AS autor
+    FROM MENSAJE_GRUPO m
+    JOIN USUARIO u ON m.ID_EMISOR = u.ID_USUARIO
     WHERE m.ID_GRUPO = ?
     ORDER BY m.FECHA_ENVIO ASC
   `;
   db.query(sql, [grupoId], (err, result) => {
     if (err) {
-      console.error('❌ Error al obtener mensajes:', err);
+      console.error('❌ Error al obtener mensajes de grupo:', err);
       return res.status(500).json({ msg: 'Error al obtener mensajes' });
     }
     res.json(result);
@@ -279,7 +301,6 @@ app.get('/grupo/:grupoId/mensajes', (req, res) => {
 
 // ==================== SOCKET.IO ====================
 
-// ⚠️ SOLO UNA VEZ:
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -288,85 +309,139 @@ const io = new Server(server, {
   },
 });
 
-const usuariosConectados = {};
+const usuariosConectados = {}; // { userId: socketId }
 
 io.on('connection', (socket) => {
   console.log('🟢 Usuario conectado:', socket.id);
 
-  // Registrar usuario
+  // Registrar usuario en el "mapa" de sockets
   socket.on('registrarUsuario', (userId) => {
     usuariosConectados[userId] = socket.id;
     console.log(`🆕 Usuario ${userId} registrado con socket ${socket.id}`);
   });
 
-  // Oferta WebRTC
+  // ---------- WebRTC: Oferta ----------
   socket.on('offer', (data) => {
-    // data: { to, from, sdp }
+    // data: { to, from, fromName, sdp }
     const destino = usuariosConectados[data.to];
     if (destino) {
-      io.to(destino).emit('offer', { from: data.from, sdp: data.sdp });
-    }
-  });
-
-  // Respuesta WebRTC
-  socket.on('answer', (data) => {
-    const destino = usuariosConectados[data.to];
-    if (destino) {
-      io.to(destino).emit('answer', { from: data.from, sdp: data.sdp });
-    }
-  });
-
-  // ICE Candidates
-  socket.on('ice-candidate', (data) => {
-    const destino = usuariosConectados[data.to];
-    if (destino) {
-      io.to(destino).emit('ice-candidate', { from: data.from, candidate: data.candidate });
-    }
-  });
-
-  // Chat privado
-  socket.on('mensajePrivado', ({ de, para, texto }) => {
-    console.log(`📨 Mensaje de ${de} para ${para}: ${texto}`);
-
-    const sqlConversacion = `
-      SELECT ID_CONVERSACION FROM conversacion 
-      WHERE (ID_USUARIO1=? AND ID_USUARIO2=?) 
-         OR (ID_USUARIO1=? AND ID_USUARIO2=?)
-    `;
-
-    db.query(sqlConversacion, [de, para, para, de], (err, result) => {
-      if (err) return console.error('❌ Error consultando conversación:', err);
-
-      if (result.length > 0) {
-        guardarMensaje(result[0].ID_CONVERSACION);
-      } else {
-        const sqlNueva = `
-          INSERT INTO conversacion (ID_USUARIO1, ID_USUARIO2, FECHA_CREACION)
-          VALUES (?, ?, NOW())
-        `;
-        db.query(sqlNueva, [de, para], (err2, result2) => {
-          if (err2) return console.error('❌ Error creando conversación:', err2);
-          guardarMensaje(result2.insertId);
-        });
-      }
-    });
-
-    function guardarMensaje(ID_CONVERSACION) {
-      const sqlMensaje = `
-        INSERT INTO mensaje (ID_CONVERSACION, ID_EMISOR, MENSAJE, FECHA_ENVIO)
-        VALUES (?, ?, ?, NOW())
-      `;
-      db.query(sqlMensaje, [ID_CONVERSACION, de, texto], (err3) => {
-        if (err3) return console.error('❌ Error guardando mensaje:', err3);
-
-        const destino = usuariosConectados[para];
-        if (destino) {
-          io.to(destino).emit('recibirMensaje', { de, texto });
-        }
+      io.to(destino).emit('offer', { 
+        from: data.from, 
+        fromName: data.fromName, 
+        sdp: data.sdp 
       });
     }
   });
 
+  // ---------- WebRTC: Respuesta ----------
+  socket.on('answer', (data) => {
+    // data: { to, from, sdp }
+    const destino = usuariosConectados[data.to];
+    if (destino) {
+      io.to(destino).emit('answer', { 
+        from: data.from, 
+        sdp: data.sdp 
+      });
+    }
+  });
+
+  // ---------- WebRTC: ICE Candidates ----------
+  socket.on('ice-candidate', (data) => {
+    // data: { to, from, candidate }
+    const destino = usuariosConectados[data.to];
+    if (destino) {
+      io.to(destino).emit('ice-candidate', { 
+        from: data.from, 
+        candidate: data.candidate 
+      });
+    }
+  });
+
+ // ---------- Chat privado ----------
+socket.on('mensajePrivado', ({ 
+  de, 
+  para, 
+  texto, 
+  archivo_url, 
+  archivo_mime, 
+  archivo_nombre, 
+  tipo 
+}) => {
+  console.log(`📨 Mensaje de ${de} para ${para}`, { texto, archivo_url });
+
+  // Buscar o crear conversación
+  const sqlConversacion = `
+    SELECT ID_CONVERSACION FROM CONVERSACION 
+    WHERE (ID_USUARIO1=? AND ID_USUARIO2=?) 
+       OR (ID_USUARIO1=? AND ID_USUARIO2=?)
+  `;
+
+  db.query(sqlConversacion, [de, para, para, de], (err, result) => {
+    if (err) {
+      console.error('❌ Error consultando conversación:', err);
+      return;
+    }
+
+    if (result.length > 0) {
+      guardarMensaje(result[0].ID_CONVERSACION);
+    } else {
+      const sqlNueva = `
+        INSERT INTO CONVERSACION (ID_USUARIO1, ID_USUARIO2) 
+        VALUES (?, ?)
+      `;
+      db.query(sqlNueva, [de, para], (err2, result2) => {
+        if (err2) {
+          console.error('❌ Error creando conversación:', err2);
+          return;
+        }
+        guardarMensaje(result2.insertId);
+      });
+    }
+  });
+
+  function guardarMensaje(ID_CONVERSACION) {
+    const sqlMensaje = `
+      INSERT INTO MENSAJE 
+      (ID_CONVERSACION, ID_EMISOR, MENSAJE, TIPO, ARCHIVO_URL, ARCHIVO_MIME, ARCHIVO_NOMBRE_ORIGINAL)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sqlMensaje,
+      [
+        ID_CONVERSACION,
+        de,
+        texto || null,                // MENSAJE puede ser null si es solo archivo
+        tipo || 'texto',              // por defecto 'texto'
+        archivo_url || null,
+        archivo_mime || null,
+        archivo_nombre || null,
+      ],
+      (err3) => {
+        if (err3) {
+          console.error('❌ Error guardando mensaje:', err3);
+          return;
+        }
+
+        // Enviar al destinatario si está conectado
+        const destino = usuariosConectados[para];
+        if (destino) {
+          io.to(destino).emit('recibirMensaje', { 
+            de,
+            texto: texto || '',
+            archivo_url: archivo_url || null,
+            archivo_mime: archivo_mime || null,
+            archivo_nombre: archivo_nombre || null,
+            tipo: tipo || 'texto'
+          });
+        }
+      }
+    );
+  }
+});
+
+
+  // ---------- Desconexión ----------
   socket.on('disconnect', () => {
     for (const [id, sid] of Object.entries(usuariosConectados)) {
       if (sid === socket.id) {
@@ -377,6 +452,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// ==================== ARRANQUE DEL SERVIDOR ====================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor con Socket.IO corriendo en puerto ${PORT}`);

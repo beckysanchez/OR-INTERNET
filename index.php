@@ -105,9 +105,17 @@
         </div>
         <div class="chat-box mb-2"></div>
         <div class="input-group">
-            <input type="text" class="form-control" placeholder="Selecciona un amigo para chatear">
-            <button class="btn btn-primary">Enviar</button>
-        </div>
+    <button class="btn btn-outline-secondary" id="btnAdjuntar" type="button">
+        <i class="bi bi-paperclip"></i>
+    </button>
+
+    <!-- Input real de archivos (oculto) -->
+    <input type="file" id="fileInput" class="d-none">
+
+    <input type="text" class="form-control" id="chatInput" placeholder="Selecciona un amigo para chatear">
+    <button class="btn btn-primary" id="btnEnviar" type="button">Enviar</button>
+</div>
+
     </div>
 
     <!-- SOLO ESTE POPUP, nada más -->
@@ -155,79 +163,189 @@
         SocioMatch • Quinela + chat con amigos
     </footer>
 
-    <script>
-        // ******************************************************
-        // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
-        // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
+   <script>
+    // ******************************************************
+    // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
+    // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
     //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
     const BASE_API_URL = 'http://192.168.2.193/OR-INTERNET/api'; 
-        // ******************************************************
+    // ******************************************************
+    // variables globales para el chat
+    let user = null;
+    let targetUserId = null;
+    let conversationId = null;
 
-        // Manejo de usuario logueado / cierre de sesión
-        document.addEventListener("DOMContentLoaded", async () => {
-            const user = JSON.parse(localStorage.getItem('usuario'));
+    // Manejo de usuario logueado / cierre de sesión
+    document.addEventListener("DOMContentLoaded", async () => {
+        user = JSON.parse(localStorage.getItem('usuario'));
 
-            const userPoints = document.getElementById('userPoints');
-            const profileImg = document.getElementById('profileImg');
-            const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
-            const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
-            const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+        const userPoints = document.getElementById('userPoints');
+        const profileImg = document.getElementById('profileImg');
+        const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
+        const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
+        const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
-            if (user) {
-                userPoints.textContent = user.puntos || 0;
-                profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
+        if (user) {
+            userPoints.textContent = user.puntos || 0;
+            profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
 
-                if (loginBtn) loginBtn.remove();
-                if (registerBtn) registerBtn.remove();
+            if (loginBtn) loginBtn.remove();
+            if (registerBtn) registerBtn.remove();
 
-                btnCerrarSesion.style.display = 'inline-block';
+            btnCerrarSesion.style.display = 'inline-block';
+        } else {
+            userPoints.textContent = 0;
+            profileImg.src = 'img/usuario-generico.png';
+            btnCerrarSesion.style.display = 'none';
+        }
+
+        btnCerrarSesion.addEventListener('click', () => {
+            localStorage.removeItem('usuario');
+            location.reload();
+        });
+
+        function getCurrentUser() {
+            try {
+                const userJson = localStorage.getItem('user');
+                if (userJson) {
+                    const userData = JSON.parse(userJson);
+                    // Asegúrate de que los nombres de las propiedades coincidan con tu base de datos
+                    return { 
+                        id: userData.ID_USUARIO, 
+                        username: userData.Username 
+                    };
+                }
+            } catch (e) {
+                console.error("Error al obtener datos del usuario de localStorage:", e);
+            }
+            return null; // Retorna null si no hay datos
+        }
+
+        // ---------- amigos y chat con DB real ----------
+        const searchInput = document.getElementById('searchUser');
+        const searchResults = document.getElementById('searchResults');
+        const friendsList = document.getElementById('friendsList');
+        const chatBox = document.querySelector('.chat-box');
+        const input = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('btnEnviar');
+        const attachBtn = document.getElementById('btnAdjuntar');
+        const fileInput = document.getElementById('fileInput');
+
+        let friends = [];
+        let chats = {};
+
+        // ========= FUNCIONES PARA PINTAR MENSAJES =========
+        window.addMessageToUI = function (text, isMine) {
+            const div = document.createElement('div');
+            div.classList.add('mensaje');
+            div.classList.add(isMine ? 'mensaje-mio' : 'mensaje-otro');
+            div.textContent = text;
+
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        window.addFileMessageToUI = function (url, mime, isMine) {
+            const div = document.createElement('div');
+            div.classList.add('mensaje');
+            div.classList.add(isMine ? 'mensaje-mio' : 'mensaje-otro');
+
+            let inner = '';
+
+            if (mime && mime.startsWith('image/')) {
+                inner = `<img src="${url}" class="img-fluid rounded" style="max-width:200px;">`;
+            } else if (mime && mime.startsWith('video/')) {
+                inner = `<video src="${url}" controls style="max-width:200px;"></video>`;
+            } else if (mime && mime.startsWith('audio/')) {
+                inner = `<audio src="${url}" controls></audio>`;
             } else {
-                userPoints.textContent = 0;
-                profileImg.src = 'img/usuario-generico.png';
-                btnCerrarSesion.style.display = 'none';
+                inner = `<a href="${url}" target="_blank">Descargar archivo</a>`;
             }
 
-            btnCerrarSesion.addEventListener('click', () => {
-                localStorage.removeItem('usuario');
-                location.reload();
+            div.innerHTML = inner;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        function detectarTipoArchivo(mime) {
+            if (!mime) return 'archivo';
+            if (mime.startsWith('image/')) return 'imagen';
+            if (mime.startsWith('video/')) return 'video';
+            if (mime.startsWith('audio/')) return 'audio';
+            return 'archivo';
+        }
+
+        // ========= BOTÓN DE ADJUNTAR ARCHIVO =========
+        if (attachBtn && fileInput) {
+            attachBtn.addEventListener('click', () => {
+                if (!targetUserId) {
+                    alert('Selecciona un amigo para enviar archivos (haz clic en "Mensaje" primero).');
+                    return;
+                }
+                fileInput.click();
             });
 
-    function getCurrentUser() {
-    try {
-        const userJson = localStorage.getItem('user');
-        if (userJson) {
-            const userData = JSON.parse(userJson);
-            // Asegúrate de que los nombres de las propiedades coincidan con tu base de datos
-            return { 
-                id: userData.ID_USUARIO, 
-                username: userData.Username 
-            };
+            fileInput.addEventListener('change', async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+
+                if (!targetUserId) {
+                    alert('Selecciona un amigo para enviar archivos.');
+                    fileInput.value = '';
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('archivo', file);
+
+                    const res = await fetch(`${BASE_API_URL}/subir_archivo.php`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    console.log("Archivo subido:", data);
+
+                    if (!res.ok || data.error) {
+                        alert(data.error || 'Error al subir el archivo');
+                        return;
+                    }
+
+                    const tipo = detectarTipoArchivo(data.mime);
+
+                    // 1) Mostrar de inmediato en mi chat
+                    addFileMessageToUI(data.url, data.mime, true);
+
+                    // 2) Mandar a Node para guardar en BD y reenviar al otro usuario
+                    socket.emit("mensajePrivado", {
+                        de: user.ID_USUARIO,
+                        para: targetUserId,
+                        texto: '',
+                        archivo_url: data.url,
+                        archivo_mime: data.mime,
+                        archivo_nombre: data.nombre,
+                        tipo
+                    });
+
+                } catch (e) {
+                    console.error("Error subiendo archivo:", e);
+                    alert('Error de conexión al subir archivo');
+                } finally {
+                    fileInput.value = '';
+                }
+            });
         }
-    } catch (e) {
-        console.error("Error al obtener datos del usuario de localStorage:", e);
-    }
-    return null; // Retorna null si no hay datos
-    }
 
-            // ---------- amigos y chat con DB real ----------
-            const searchInput = document.getElementById('searchUser');
-            const searchResults = document.getElementById('searchResults');
-            const friendsList = document.getElementById('friendsList');
-            const chatBox = document.querySelector('.chat-box');
-            const input = document.querySelector('.input-group input');
-            const sendBtn = document.querySelector('.input-group button');
-
-            let friends = [];
-            let chats = {};
-
-            async function renderFriends() {
-                if (!user) return;
-                console.log("Usuario guardado:", user);
-              const res = await fetch(`${BASE_API_URL}/amigos.php?id=${user.ID_USUARIO}`);
-                
-                friends = await res.json();
-                friendsList.innerHTML = '';
-                friends.forEach(f => {
+        // ========= CARGAR AMIGOS =========
+        async function renderFriends() {
+            if (!user) return;
+            console.log("Usuario guardado:", user);
+            const res = await fetch(`${BASE_API_URL}/amigos.php?id=${user.ID_USUARIO}`);
+            
+            friends = await res.json();
+            friendsList.innerHTML = '';
+            friends.forEach(f => {
                 const div = document.createElement('div');
                 div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border-bottom', 'py-2');
                 div.innerHTML = `
@@ -249,12 +367,11 @@
                     openChat(f.Username, f.ID_USUARIO);
                 });
             });
-                 renderSidebarFriends();
-            }
+            renderSidebarFriends();
+        }
 
-            // 🟢 NUEVA función que llena la card lateral
-           function renderSidebarFriends() {
-
+        // 🟢 NUEVA función que llena la card lateral
+        function renderSidebarFriends() {
             const sidebarFriends = document.getElementById('sidebarFriendsList');
             sidebarFriends.innerHTML = '';
             if (friends.length === 0) {
@@ -262,156 +379,172 @@
                 return;
             }
 
-
             friends.forEach(f => {
                 const div = document.createElement('div');
                 div.classList.add('d-flex', 'align-items-center', 'mb-2');
                 div.innerHTML = `
-                <img src="${f.img_p || 'img/usuario-generico.png'}" 
-                 class="rounded-circle me-2" 
-                 style="width:30px;height:30px;object-fit:cover;">
-                 <span>${f.Username}</span>
-                 `;
-                 sidebarFriends.appendChild(div);
-                });
-            }
+                    <img src="${f.img_p || 'img/usuario-generico.png'}" 
+                        class="rounded-circle me-2" 
+                        style="width:30px;height:30px;object-fit:cover;">
+                    <span>${f.Username}</span>
+                `;
+                sidebarFriends.appendChild(div);
+            });
+        }
 
-            // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
-            searchInput.addEventListener('input', async () => {
-                const query = searchInput.value.trim();
-                searchResults.innerHTML = '';
-                if (!query) return;
+        // 🔍 Buscar usuarios en la BD y mostrar botón "Agregar"
+        searchInput.addEventListener('input', async () => {
+            const query = searchInput.value.trim();
+            searchResults.innerHTML = '';
+            if (!query) return;
 
-                try {
-                    // ******************************************************
-                    // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                    const res = await fetch(`${BASE_API_URL}/usuarios.php?q=${query}`); 
-                    // ******************************************************
-                    const users = await res.json();
+            try {
+                const res = await fetch(`${BASE_API_URL}/usuarios.php?q=${query}`); 
+                const users = await res.json();
 
-                    console.log('👀 Usuarios recibidos:', users);
+                console.log('👀 Usuarios recibidos:', users);
 
-                    users.forEach(u => {
-                        // Evitar mostrar al mismo usuario o amigos ya agregados
-                        if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.ID_USUARIO) return;
+                users.forEach(u => {
+                    // Evitar mostrar al mismo usuario o amigos ya agregados
+                    if (friends.some(f => f.ID_USUARIO === u.ID_USUARIO) || u.ID_USUARIO === user.ID_USUARIO) return;
 
-                        const div = document.createElement('div');
-                        div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
-                        div.innerHTML = `
-                            <div class="d-flex align-items-center">
-                                <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
-                                    class="rounded-circle me-2"
-                                    style="width:30px;height:30px;object-fit:cover;">
-                                ${u.Username}
-                            </div>
-                            <button class="btn btn-sm btn-primary">Agregar</button>
-                        `;
-                        searchResults.appendChild(div);
+                    const div = document.createElement('div');
+                    div.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'p-1', 'mb-1', 'rounded');
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${u.img_p ? `data:image/png;base64,${u.img_p}` : 'img/usuario-generico.png'}"
+                                class="rounded-circle me-2"
+                                style="width:30px;height:30px;object-fit:cover;">
+                            ${u.Username}
+                        </div>
+                        <button class="btn btn-sm btn-primary">Agregar</button>
+                    `;
+                    searchResults.appendChild(div);
 
-                        div.querySelector('button').addEventListener('click', async () => {
-                            try {
-                                // ******************************************************
-                                // CAMBIO DE URL: De Render a XAMPP (API PHP)
-                                const res = await fetch(`${BASE_API_URL}/agregar_amigo.php`, {
-                                   
-                                // ******************************************************
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                 body: JSON.stringify({
+                    div.querySelector('button').addEventListener('click', async () => {
+                        try {
+                            const res = await fetch(`${BASE_API_URL}/agregar_amigo.php`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
                                     ID_USUARIO1: user.ID_USUARIO,   // TU ID guardado
                                     ID_USUARIO2: u.ID_USUARIO       // ID del amigo encontrado
-                                    })
+                                })
+                            });
+                            const data = await res.json();
+                            console.log('📩 Respuesta al agregar amigo:', data);
+                            console.log('Voy a mandar:', {ID_USUARIO1: user.ID_USUARIO, ID_USUARIO2: u.ID_USUARIO});
 
-                                });
-                                const data = await res.json();
-                                console.log('📩 Respuesta al agregar amigo:', data);
-                                 console.log('Voy a mandar:', {ID_USUARIO1: user.ID_USUARIO, ID_USUARIO2: u.ID_USUARIO});
-
-                                if (res.ok) {
-                                    alert('Amigo agregado correctamente');
-                                    renderFriends();
-                                    searchResults.innerHTML = '';
-                                    searchInput.value = '';
-                                } else {
-                                    alert('Error al agregar amigo: ' + (data.msg || ''));
-                                }
-                            } catch (err) {
-                                console.error('Error en fetch:', err);
-                                alert('Error al conectar con el servidor');
+                            if (res.ok) {
+                                alert('Amigo agregado correctamente');
+                                renderFriends();
+                                searchResults.innerHTML = '';
+                                searchInput.value = '';
+                            } else {
+                                alert('Error al agregar amigo: ' + (data.msg || ''));
                             }
-                        });
+                        } catch (err) {
+                            console.error('Error en fetch:', err);
+                            alert('Error al conectar con el servidor');
+                        }
                     });
+                });
 
-                } catch (error) {
-                    console.error('❌ Error cargando usuarios:', error);
+            } catch (error) {
+                console.error('❌ Error cargando usuarios:', error);
+            }
+        });
+
+        // Llamamos la función cuando cargue la página:
+        document.addEventListener("DOMContentLoaded", loadLiveMatch);
+
+        // ========= ABRIR CHAT CON UN AMIGO =========
+        async function openChat(friendUsername, friendId) {
+            try {
+                chats = {}; // Ya no usamos localStorage
+
+                if (!user) {
+                    alert("No hay usuario en sesión. Vuelve a iniciar sesión.");
+                    return;
                 }
-            });
 
-            
+                targetUserId = friendId;
 
+                const chatTitle = document.getElementById('chatTitle');
+                chatTitle.textContent = `Chat con ${friendUsername}`;
 
+                chatBox.innerHTML = '';
+                input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
 
-            // Llamamos la función cuando cargue la página:
-             document.addEventListener("DOMContentLoaded", loadLiveMatch);
-          async function openChat(friendUsername, friendId) {
-    chats = {}; // Ya no usamos localStorage
+                // 1️⃣ Obtener ID_CONVERSACION desde PHP (si no existe, lo crea)
+                console.log("Pidiendo conversación a PHP...", user.ID_USUARIO, friendId);
+                const res = await fetch(`${BASE_API_URL}/obtener_conversacion.php?id1=${user.ID_USUARIO}&id2=${friendId}`);
 
-    targetUserId = friendId;
+                if (!res.ok) {
+                    const txt = await res.text();
+                    console.error("Error en obtener_conversacion.php:", txt);
+                    alert("Error al obtener la conversación (ver consola).");
+                    return;
+                }
 
-    const chatTitle = document.getElementById('chatTitle');
-    chatTitle.textContent = `Chat con ${friendUsername}`;
+                const data = await res.json();
+                console.log("Conversación:", data);
+                conversationId = data.ID_CONVERSACION;
 
-    chatBox.innerHTML = '';
-    input.placeholder = `Escribe un mensaje a ${friendUsername}...`;
+                // 2️⃣ Cargar historial desde BD
+                const resHist = await fetch(`${BASE_API_URL}/obtener_mensaje.php?ID_CONVERSACION=${conversationId}`);
 
-    // 1️⃣ Obtener ID_CONVERSACION desde PHP (si no existe, lo crea)
-    const res = await fetch(`${BASE_API_URL}/obtener_conversacion.php?id1=${user.ID_USUARIO}&id2=${friendId}`);
-    const data = await res.json();
-    const conversationId = data.ID_CONVERSACION;
+                if (!resHist.ok) {
+                    const txt = await resHist.text();
+                    console.error("Error en obtener_mensaje.php:", txt);
+                    alert("Error al obtener los mensajes (ver consola).");
+                    return;
+                }
 
-    // 2️⃣ Cargar historial desde BD
-    fetch(`${BASE_API_URL}/obtener_mensajes.php?ID_CONVERSACION=${conversationId}`)
-        .then(res => res.json())
-        .then(mensajes => {
-            mensajes.forEach(m => {
-                addMessageToUI(m.MENSAJE, m.ID_EMISOR == user.ID_USUARIO);
-            });
-        });
+                const mensajes = await resHist.json();
+                console.log("Historial:", mensajes);
 
-    // 3️⃣ Enviar mensaje: guardar en BD + mostrar en UI
-    sendBtn.onclick = () => {
-    const text = input.value.trim();
-    if (!text) return;
+                mensajes.forEach(m => {
+                    const emisorId = m.ID_EMISOR ?? m.id_emisor;
+                    const esMio = emisorId == user.ID_USUARIO;
 
-    addMessageToUI(text, true);
-    input.value = '';
+                    if (m.ARCHIVO_URL) {
+                        addFileMessageToUI(m.ARCHIVO_URL, m.ARCHIVO_MIME, esMio);
+                    }
+                    if (m.MENSAJE) {
+                        addMessageToUI(m.MENSAJE, esMio);
+                    }
+                });
 
-    // 🔹 Guardar en la base de datos
-    fetch(`${BASE_API_URL}/enviar_mensaje.php`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            ID_CONVERSACION: conversationId,
-            ID_EMISOR: user.ID_USUARIO,
-            MENSAJE: text
-        })
+                // 3️⃣ Enviar mensaje: mostrar + enviar solo por socket
+                sendBtn.onclick = () => {
+                    const text = input.value.trim();
+                    if (!text) return;
+
+                    console.log("Enviando mensaje:", text);
+
+                    // Mostrar al instante en la UI
+                    addMessageToUI(text, true);
+                    input.value = '';
+
+                    // Enviar en tiempo real por socket (Node se encarga de guardar en BD)
+                    socket.emit("mensajePrivado", {
+                        de: user.ID_USUARIO,
+                        para: friendId,
+                        texto: text
+                    });
+                };
+
+            } catch (err) {
+                console.error("❌ Error en openChat:", err);
+                alert("Ocurrió un error abriendo el chat (ver consola).");
+            }
+        }
+
+        renderFriends();
     });
+</script>
 
-    // 🔹 Enviar en tiempo real por socket
-    socket.emit("mensajePrivado", {
-        de: user.ID_USUARIO,
-        para: friendId,
-        texto: text
-    });
-};
-
-}
-            renderFriends();
-        });
-
-        
-        
-    </script>
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -525,6 +658,23 @@
     // =========================================================
     const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
     //const socket = io("http://192.168.2.193:3000"); 
+
+   socket.on('recibirMensaje', ({ de, texto, archivo_url, archivo_mime, tipo }) => {
+    if (de !== targetUserId) {
+        console.log('Mensaje de otro chat:', { de, texto, archivo_url });
+        return;
+    }
+
+    if (archivo_url) {
+        addFileMessageToUI(archivo_url, archivo_mime, false);
+    }
+
+    if (texto) {
+        addMessageToUI(texto, false);
+    }
+});
+
+
     // =========================================================
     // ⚙️ VARIABLES WEBRTC
     // =========================================================

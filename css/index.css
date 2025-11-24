@@ -177,3 +177,54 @@
     from { transform: scale(0.9); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
 }
+
+
+
+/* Contenedor del chat */
+.chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    max-height: 320px;   /* ajusta como quieras */
+    overflow-y: auto;
+}
+
+/* Estilo base de burbuja */
+.mensaje {
+    max-width: 80%;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+/* Tus mensajes (lado derecho) */
+.mensaje-mio {
+    align-self: flex-end;
+    background-color: #0d6efd;  /* azul */
+    color: #fff;
+    border-bottom-right-radius: 2px;
+}
+
+/* Mensajes del otro (lado izquierdo) */
+.mensaje-otro {
+    align-self: flex-start;
+    background-color: #e9ecef;  /* gris clarito */
+    color: #212529;
+    border-bottom-left-radius: 2px;
+}
+
+
+/* Autor pequeñito arriba del mensaje */
+.mensaje-autor {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+/* Texto del mensaje */
+.mensaje-texto {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
