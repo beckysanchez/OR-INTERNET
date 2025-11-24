@@ -32,8 +32,8 @@
                     ⭐ <span id="userPoints">0</span>
                 </div>
 
-                <img src="img/usuario-generico.png" alt="perfil" class="rounded-circle"
-                    style="width:40px; height:40px; object-fit:cover;" id="profileImg">
+               <img id="profileImg" class="rounded-circle" width="40" height="40">
+
 
                 <button id="btnCerrarSesion" class="btn btn-outline-danger btn-sm" style="display:none;">
                     Cerrar sesión
@@ -194,9 +194,6 @@
         const loginBtn = document.querySelector('nav a[href="iniciosesion.php"]'); // Ajuste a .php
         const registerBtn = document.querySelector('nav a[href="registro.php"]'); // Ajuste a .php
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-
-        
-
 
         if (user) {
             userPoints.textContent = user.puntos || 0;
@@ -685,8 +682,22 @@
         });
     }
 
-
+async function loadProfileImage() {
+    const user = JSON.parse(localStorage.getItem('usuario'));
     
+    const res = await fetch(`${BASE_API_URL}/get_recompensa_usuario.php?id_usuario=${user.ID_USUARIO}`);
+    const recompensas = await res.json();
+
+    // Solo usamos la seleccionada (marcada como activa)
+    const activa = recompensas.find(r => r.seleccionada == 1);
+
+    document.getElementById('profileImg').src = activa
+        ? activa.imagen_url
+        : 'img/usuario-generico.png';
+}
+
+    loadProfileImage();
+
     loadLiveMatch();
 </script>
 <script>
