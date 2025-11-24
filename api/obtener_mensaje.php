@@ -1,11 +1,11 @@
 <?php
-header("Content-Type: application/json");
 require_once "conexion.php";
 
 $idConversacion = $_GET['ID_CONVERSACION'];
 
 $stmt = $conn->prepare("
-    SELECT m.ID_MENSAJE, m.MENSAJE, m.FECHA_ENVIO, u.Username AS emisor
+    SELECT m.ID_MENSAJE, m.MENSAJE, m.FECHA_ENVIO, 
+           u.Username AS nombre_emisor, u.ID_USUARIO AS id_emisor
     FROM mensaje m
     JOIN usuario u ON m.ID_EMISOR = u.ID_USUARIO
     WHERE m.ID_CONVERSACION = ?
@@ -13,9 +13,10 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("i", $idConversacion);
 $stmt->execute();
-$result = $stmt->get_result();
 
+$result = $stmt->get_result();
 $mensajes = [];
+
 while ($row = $result->fetch_assoc()) {
     $mensajes[] = $row;
 }

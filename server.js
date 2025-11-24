@@ -345,13 +345,54 @@ io.on("connection", (socket) => {
   });
 
   // 🔹 Chat privado
-  socket.on("mensajePrivado", ({ de, para, texto }) => {
-    console.log(`📨 Mensaje de ${de} para ${para}: ${texto}`);
-    const destino = usuariosConectados[para];
-    if (destino) {
-      io.to(destino).emit("recibirMensaje", { de, texto });
+socket.on("mensajePrivado", ({ de, para, texto }) => {
+  console.log(`📨 Mensaje de ${de} para ${para}: ${texto}`);
+
+  // 1️⃣ Buscar o crear la conversación entre los dos usuarios
+  const sqlConversacion = `
+    SELECT ID_CONVERSACION FROM conversacion 
+    WHERE (ID_USUARIO1=? AND ID_USUARIO2=?) 
+       OR (ID_USUARIO1=? AND ID_USUARIO2=?)
+  `;
+
+  db.query(sqlConversacion, [de, para, para, de], (err, result) => {
+    if (err) return console.error('❌ Error consultando conversación:', err);
+
+    let idConversacion;
+
+    if (result.length > 0) {
+      idConversacion = result[0].ID_CONVERSACION;
+      guardarMensaje(idConversacion);
+    } else {
+      const sqlNueva = `
+        INSERT INTO conversacion (ID_USUARIO1, ID_USUARIO2, FECHA_CREACION)
+        VALUES (?, ?, NOW())
+      `;
+      db.query(sqlNueva, [de, para], (err2, result2) => {
+        if (err2) return console.error('❌ Error creando conversación:', err2);
+
+        idConversacion = result2.insertId;
+        guardarMensaje(idConversacion);
+      });
     }
   });
+
+  function guardarMensaje(ID_CONVERSACION) {
+    const sqlMensaje = `
+      INSERT INTO mensaje (ID_CONVERSACION, ID_EMISOR, MENSAJE, FECHA_ENVIO)
+      VALUES (?, ?, ?, NOW())
+    `;
+    db.query(sqlMensaje, [ID_CONVERSACION, de, texto], (err3) => {
+      if (err3) return console.error('❌ Error guardando mensaje:', err3);
+
+      const destino = usuariosConectados[para];
+      if (destino) {
+        io.to(destino).emit("recibirMensaje", { de, texto });
+      }
+    });
+  }
+});
+
 
   // 🔚 Cuando se desconecta
   socket.on("disconnect", () => {

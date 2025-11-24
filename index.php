@@ -168,7 +168,22 @@
                 location.reload();
             });
 
-
+    function getCurrentUser() {
+    try {
+        const userJson = localStorage.getItem('user');
+        if (userJson) {
+            const userData = JSON.parse(userJson);
+            // Asegúrate de que los nombres de las propiedades coincidan con tu base de datos
+            return { 
+                id: userData.ID_USUARIO, 
+                username: userData.Username 
+            };
+        }
+    } catch (e) {
+        console.error("Error al obtener datos del usuario de localStorage:", e);
+    }
+    return null; // Retorna null si no hay datos
+    }
 
             // ---------- amigos y chat con DB real ----------
             const searchInput = document.getElementById('searchUser');
@@ -308,20 +323,8 @@
                 }
             });
 
-async function getConversationId(myId, friendId) {
-    const res = await fetch(`${BASE_API_URL}/obtener_conversacion.php?id1=${myId}&id2=${friendId}`);
-    const data = await res.json();
-    return data.ID_CONVERSACION;
+            
 
-}
-
-function addMessageToUI(text, sent = false) {
-    const div = document.createElement('div');
-    div.className = 'chat-message ' + (sent ? 'sent' : 'received');
-    div.textContent = text;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
 
 
             // Llamamos la función cuando cargue la página:
@@ -350,23 +353,32 @@ function addMessageToUI(text, sent = false) {
         });
 
     // 3️⃣ Enviar mensaje: guardar en BD + mostrar en UI
-    sendBtn.onclick = async () => {
-        const text = input.value.trim();
-        if (!text) return;
+    sendBtn.onclick = () => {
+    const text = input.value.trim();
+    if (!text) return;
 
-        addMessageToUI(text, true); // Mostrar en UI local
-        input.value = '';
+    addMessageToUI(text, true);
+    input.value = '';
 
-        await fetch(`${BASE_API_URL}/enviar_mensaje.php`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ID_CONVERSACION: conversationId,
-                ID_EMISOR: user.ID_USUARIO,
-                MENSAJE: text
-            })
-        });
-    };
+    // 🔹 Guardar en la base de datos
+    fetch(`${BASE_API_URL}/enviar_mensaje.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            ID_CONVERSACION: conversationId,
+            ID_EMISOR: user.ID_USUARIO,
+            MENSAJE: text
+        })
+    });
+
+    // 🔹 Enviar en tiempo real por socket
+    socket.emit("mensajePrivado", {
+        de: user.ID_USUARIO,
+        para: friendId,
+        texto: text
+    });
+};
+
 }
             renderFriends();
         });
@@ -376,6 +388,41 @@ function addMessageToUI(text, sent = false) {
     </script>
     
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+document.getElementById('btnSend').addEventListener('click', sendMessage);
+
+async function sendMessage() {
+    const content = document.getElementById('msgInput').value;
+    if (!content) return;
+
+    await fetch('api/messages.php?action=send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            sender_id: currentUserId,
+            receiver_id: currentFriendId,
+            content: content
+        })
+    });
+
+    document.getElementById('msgInput').value = '';
+    loadMessages();
+}
+
+async function loadMessages() {
+    const res = await fetch(`api/messages.php?action=get&user_id=${currentUserId}&friend_id=${currentFriendId}`);
+    const data = await res.json();
+
+    let html = '';
+    data.messages.forEach(msg => {
+        html += `<div class="${msg.id_emisor == currentUserId ? 'msg-me' : 'msg-peer'}">
+                    ${msg.contenido}
+                 </div>`;
+    });
+
+    document.querySelector('.chat-box').innerHTML = html;
+}
+</script>
 
    <script>
     document.addEventListener('DOMContentLoaded', () => {
