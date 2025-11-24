@@ -24,10 +24,11 @@
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="points-badge">
-                    ⭐ <span id="userPoints">0</span>
+                    ⭐ <span id="userPoints">120</span>
                 </div>
                 <img src="img/image1.png" alt="perfil" class="rounded-circle"
-                     style="width:40px; height:40px; object-fit:cover;">
+                    style="width:40px; height:40px; object-fit:cover;">
+
             </div>
         </div>
     </header>
@@ -84,17 +85,21 @@
 
                 <br>
 
-                <!-- 🟠 RECOMPENSAS -->
-                <div class="card shadow-sm">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="m-0">🎁 Recompensas Disponibles</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row" id="recompensasContainer">
-                            <!-- Recompensas dinámicas desde la base de datos -->
-                        </div>
-                    </div>
-                </div>
+      <!-- 🟠 CARD DE RECOMPENSAS -->
+         <div class="card shadow-sm">
+          <div class="card-header bg-success text-white">
+              <h5 class="m-0">🎁 Recompensas Disponibles</h5>
+         </div>
+            <div class="card-body">
+             <div class="row" id="recompensasContainer">
+                <button onclick="activarRecompensa(${r.id_recompensa})" class="btn btn-sm btn-primary">
+   Usar como foto
+</button>
+
+            <!-- Recompensas dinámicas desde la base de datos -->
+             </div>
+            </div>
+         </div>
 
             </div>
         </div>
@@ -119,8 +124,7 @@
                 return;
             }
 
-            // Mostrar puntos del usuario
-            document.getElementById('userPoints').textContent = user.puntos || 0;
+    document.getElementById('userPoints').textContent = user.puntos || 0;
 
             loadMetas(user.ID_USUARIO);
             loadRecompensas();    // usa catálogo general get_recompensa.php
@@ -231,10 +235,10 @@
 
                 console.log('Respuesta de get_recompensa.php:', data);
 
-                // Aseguramos que sea un arreglo
-                const recompensas = Array.isArray(data)
-                    ? data
-                    : (Array.isArray(data.recompensas) ? data.recompensas : []);
+        // Aseguramos que sea un arreglo
+        const recompensas = Array.isArray(data)
+            ? data
+            : (Array.isArray(data.recompensas) ? data.recompensas : []);
 
                 const contenedor = document.getElementById("recompensasContainer");
                 contenedor.innerHTML = '';
@@ -244,41 +248,34 @@
                     return;
                 }
 
-                recompensas.forEach(r => {
-                    contenedor.innerHTML += `
-                        <div class="col-6 col-md-4 mb-3">
-                            <div class="reward-card text-center">
-                                <img src="${r.imagen_url}" alt="${r.nombre}" class="img-fluid rounded">
-                                <h6 class="mt-2">${r.nombre}</h6>
-                                <p class="text-muted small">Costo: ${r.costo} pts</p>
-                                <button class="btn btn-sm btn-success" onclick="canjear(${r.id_recompensa})">
-                                    Canjear
-                                </button>
-                                <button class="btn btn-sm btn-primary mt-1" onclick="activarRecompensa(${r.id_recompensa})">
-                                    Usar como foto
-                                </button>
-                            </div>
-                        </div>`;
-                });
-            } catch (error) {
-                console.error("Error cargando recompensas:", error);
-            }
-        }
+        recompensas.forEach(r => {
+            contenedor.innerHTML += `
+                <div class="col-6 col-md-4 mb-3">
+                    <div class="reward-card text-center">
+                        <img src="${r.imagen_url}" alt="${r.nombre}" class="img-fluid rounded">
+                        <h6 class="mt-2">${r.nombre}</h6>
+                        <p class="text-muted small">Costo: ${r.costo} pts</p>
+                        <button class="btn btn-sm btn-success" onclick="canjear(${r.id_recompensa})">
+                            Canjear
+                        </button>
+                        <button class="btn btn-sm btn-primary mt-1" onclick="activarRecompensa(${r.id_recompensa})">
+                            Usar como foto
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error cargando recompensas:", error);
+    }
+}
 
         function canjear(rewardId) {
             alert(`Intentando canjear recompensa ID: ${rewardId} (aún por implementar en backend).`);
         }
 
-        function activarRecompensa(rewardId) {
-            const user = JSON.parse(localStorage.getItem('usuario'));
-            if (!user) {
-                alert("Debes iniciar sesión para cambiar tu foto.");
-                return;
-            }
 
-            // Aquí luego puedes llamar a un PHP tipo activar_recompensa.php
-            alert(`Activar como foto de perfil la recompensa ID: ${rewardId} (pendiente implementar API).`);
-        }
+     
     </script>
 
 </body>
