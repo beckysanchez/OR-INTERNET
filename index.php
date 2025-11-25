@@ -185,7 +185,7 @@
 
         if (user) {
           
-            profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
+            //profileImg.src = user.img_p ? `data:image/png;base64,${user.img_p}` : 'img/image1.png';
 
             if (loginBtn) loginBtn.remove();
             if (registerBtn) registerBtn.remove();

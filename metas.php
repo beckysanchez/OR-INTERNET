@@ -118,7 +118,9 @@
 
       document.addEventListener('DOMContentLoaded', () => {
     const user = JSON.parse(localStorage.getItem('usuario'));
-
+cargarUsuarioActual();  // <-- usar esta
+    loadMetas(user.ID_USUARIO);
+    loadRecompensas();
     if (!user) {
         window.location.href = 'iniciosesion.php';
         return;
@@ -268,6 +270,21 @@ async function canjear(id_recompensa) {
     }
 }
 
+async function cargarUsuarioActual() {
+    const user = JSON.parse(localStorage.getItem('usuario'));
+
+    const res = await fetch(`${BASE_API_URL}/get_usuario.php?id=${user.ID_USUARIO}`);
+    const data = await res.json();
+
+    if (data) {
+        // Actualizar imagen y puntos en pantalla
+        document.getElementById("userProfilePic").src = data.foto_perfil || 'img/usuario-generico.png';
+        document.getElementById("userPoints").textContent = data.puntos;
+
+        // Actualizar LocalStorage para sincronizar
+        localStorage.setItem('usuario', JSON.stringify(data));
+    }
+}
 
 
      
