@@ -178,7 +178,7 @@
     // CONSTANTE DE BASE URL (HA SIDO MODIFICADA)
     // Reemplaza 'sociomatch' con el nombre de tu carpeta si es diferente
     //const BASE_API_URL = 'http://localhost/OR-INTERNET/api'; 
-    const BASE_API_URL = 'http://192.168.1.120/api'; 
+    const BASE_API_URL = 'http://192.168.1.93/OR-INTERNET/api'; 
     // ******************************************************
     // variables globales para el chat
     let user = null;
