@@ -113,7 +113,7 @@
     <script>
         // ******************************************************
         // CONSTANTE DE BASE URL LOCAL
-     const BASE_API_URL = 'http://192.168.1.120/api';
+     const BASE_API_URL = 'http://10.142.14.31/api';
         // ******************************************************
 
       document.addEventListener('DOMContentLoaded', () => {

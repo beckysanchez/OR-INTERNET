@@ -151,7 +151,7 @@
         // Conexión con Socket.IO (mismo host, puerto 3000)
 const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
 
-const BASE_API_URL = 'http://192.168.1.120/api';
+const BASE_API_URL = 'http://10.142.14.31/api';
         // ******************************************************
 
         const createGroupBtn = document.getElementById('createGroupBtn');

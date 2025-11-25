@@ -333,7 +333,7 @@ io.on('connection', (socket) => {
 
     // Notificar a todos los demás que este usuario está online
     //socket.broadcast.emit('usuarioOnline', { id_usuario: userId });
- // });
+  });
 
 
   // ===========================================
