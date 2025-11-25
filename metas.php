@@ -62,26 +62,7 @@
          </div>
          </div>
 
-         <div class="card shadow-sm mt-4">
-  <div class="card-header bg-warning text-white">
-      <h5 class="m-0">🏆 Ranking de Usuarios</h5>
-  </div>
-  <div class="card-body">
-      <table class="table table-striped">
-          <thead>
-              <tr>
-                  <th>#</th>
-                  <th>Usuario</th>
-                  <th>Puntos</th>
-              </tr>
-          </thead>
-          <tbody id="rankingTableBody">
-              <!-- Rellenado con JS -->
-          </tbody>
-      </table>
-  </div>
-</div>
-
+         
 <br>
 
       <!-- 🟠 CARD DE RECOMPENSAS -->

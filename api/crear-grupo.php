@@ -36,11 +36,11 @@ if (!is_array($miembrosIds)) {
 $miembrosIds = array_map('intval', $miembrosIds);
 $miembrosIds = array_values(array_unique($miembrosIds)); // quitar duplicados
 
-if (count($miembrosIds) !== 3) {
+/*if (count($miembrosIds) !== 3) {
     http_response_code(400);
     echo json_encode(["msg" => "El grupo debe tener exactamente 3 integrantes (creador + 2 amigos)."]);
     exit;
-}
+}*/
 
 try {
     $conn->begin_transaction();

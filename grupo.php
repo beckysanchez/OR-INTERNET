@@ -151,7 +151,7 @@
         // Conexión con Socket.IO (mismo host, puerto 3000)
 const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`);
 
-const BASE_API_URL = 'http://10.142.14.31/api';
+const BASE_API_URL = 'http://10.142.14.31/OR-INTERNET/api';
         // ******************************************************
 
         const createGroupBtn = document.getElementById('createGroupBtn');
@@ -275,10 +275,10 @@ const BASE_API_URL = 'http://10.142.14.31/api';
                 return;
             }
 
-            if (selectedFriends.length !== 2) {
+           /* if (selectedFriends.length !== 2) {
                 alert("Debes seleccionar exactamente 2 amigos (grupo de 3 personas: tú + 2 amigos).");
                 return;
-            }
+            }*/
 
             if (!title) {
                 alert("Por favor ingresa un título para el grupo.");

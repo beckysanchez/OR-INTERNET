@@ -1,71 +1,51 @@
 <?php
+// api/obtener_mensaje.php
 header('Content-Type: application/json; charset=utf-8');
 
-// Igual que en obtener_conversacion.php: subimos un nivel
-require_once __DIR__ . '/../db.php';
+// Para que mysqli lance excepciones (y podamos atraparlas)
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// Validar parámetro
-if (!isset($_GET['ID_CONVERSACION'])) {
-    http_response_code(400);
-    echo json_encode(["error" => "Falta ID_CONVERSACION"]);
-    exit;
-}
+try {
+    // Ajusta la ruta si tu db.php está en otra carpeta
+    require_once __DIR__ . '/../db.php';  // usa $conn de db.php
 
-$idConversacion = (int)$_GET['ID_CONVERSACION'];
-if ($idConversacion <= 0) {
-    http_response_code(400);
-    echo json_encode(["error" => "ID_CONVERSACION inválido"]);
-    exit;
-}
+    if (!isset($_GET['ID_CONVERSACION'])) {
+        echo json_encode(["error" => true, "msg" => "Falta ID_CONVERSACION"]);
+        exit;
+    }
 
-// $conn viene de db.php
-if (!isset($conn) || $conn->connect_error) {
+    $idConversacion = (int) $_GET['ID_CONVERSACION'];
+
+    // Ajusta columnas según tu tabla MENSAJE
+    $sql = "
+        SELECT 
+            ID_MENSAJE,
+            ID_EMISOR,
+            MENSAJE,
+            FECHA_ENVIO,
+            ARCHIVO_URL,
+            ARCHIVO_MIME
+        FROM mensaje
+        WHERE ID_CONVERSACION = ?
+        ORDER BY FECHA_ENVIO ASC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $idConversacion);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $mensajes = [];
+    while ($row = $result->fetch_assoc()) {
+        $mensajes[] = $row;
+    }
+
+    echo json_encode($mensajes);
+
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(["error" => "Conexión a BD no inicializada"]);
-    exit;
+    echo json_encode([
+        "error" => true,
+        "msg"   => $e->getMessage()
+    ]);
 }
-
-// Traer TODOS los mensajes de esa conversación
-$sql = "
-    SELECT 
-        ID_MENSAJE,
-        ID_CONVERSACION,
-        ID_EMISOR,
-        MENSAJE,
-        TIPO,
-        ARCHIVO_URL,
-        ARCHIVO_MIME,
-        ARCHIVO_NOMBRE_ORIGINAL,
-        FECHA_ENVIO
-    FROM MENSAJE
-    WHERE ID_CONVERSACION = ?
-    ORDER BY FECHA_ENVIO ASC
-";
-
-$stmt = $conn->prepare($sql);
-if (!$stmt) {
-    http_response_code(500);
-    echo json_encode(["error" => "Error al preparar consulta", "detalle" => $conn->error]);
-    exit;
-}
-
-$stmt->bind_param("i", $idConversacion);
-
-if (!$stmt->execute()) {
-    http_response_code(500);
-    echo json_encode(["error" => "Error al ejecutar consulta", "detalle" => $stmt->error]);
-    $stmt->close();
-    exit;
-}
-
-$result = $stmt->get_result();
-$mensajes = [];
-
-while ($row = $result->fetch_assoc()) {
-    $mensajes[] = $row;
-}
-
-$stmt->close();
-
-// Devolvemos array (puede venir vacío si no hay mensajes todavía)
-echo json_encode($mensajes);
